@@ -4,6 +4,8 @@ import re
 import sys
 import pygame
 
+import fxkit
+
 SCREEN_W, SCREEN_H = 1024, 768
 FPS = 30
 TILE = 32
@@ -415,6 +417,12 @@ class Demo:
         self.font_sm = self._font(15)
         self.font_lg = self._font(40)
         self.music = MusicCue()
+        self.particles = []
+        self._shadow = fxkit.shadow_ellipse(20, 7, 55)
+        self._glow = fxkit.make_glow(52, (255, 190, 80), 180)
+        self.embers = fxkit.Drift(BOARD_PX_W, BOARD_PX_H,
+                                 [(200, 172, 90), (236, 182, 112), (168, 112, 220), (214, 152, 244)],
+                                 24)
         self.reset()
         if autostart_music:
             self.music.menu_loop()
@@ -446,6 +454,7 @@ class Demo:
         self.banner_t = 0
         self.accent = 0
         self.cat_flash = None
+        self.particles = []
         self.new_game()
 
     def log(self, text):
@@ -696,6 +705,7 @@ class Demo:
             self.log("THE STAGE FALLS TO THE HORDE")
             self.state = STATE_LOST
             return
+        self._spark(target.get("x", 0), target.get("y", 0), (255, 205, 110), 9, spread=70)
         if target["team"] == 1:
             self.grit += KILL_GRIT
         if "unit" in target or "hp" in target and target.get("team") == 1:
@@ -747,6 +757,7 @@ class Demo:
         if unit["kind"] == "frontman" and mode == "ranged":
             name = "AZRAEL D DESTROYER"
             self.cat_flash = [target["x"], target["y"], 0.35]
+        self._spark(target["x"], target["y"], (255, 210, 120) if mode == "ranged" else (255, 120, 80), 5)
         tname = (KINDS.get(target["kind"]) or BUILD_KINDS.get(target["kind"]) or {"name": target["kind"]})["name"]
         if target["hp"] <= 0:
             self.log("%s obliterates %s" % (name, tname))
@@ -796,6 +807,7 @@ class Demo:
             for t in foes:
                 dmg = random.randint(5, 8)
                 t["hp"] -= dmg
+                self._spark(t["x"], t["y"], (205, 185, 120), 2, spread=26)
                 if t["hp"] <= 0:
                     self.log("Watchtower LIGHTS UP %s" % KINDS[t["kind"]]["name"])
                     self._kill(t)
@@ -819,6 +831,7 @@ class Demo:
                 e["ap"] -= cost
                 dmg = base + random.randint(0, 1)
                 target["hp"] -= dmg
+                self._spark(target["x"], target["y"], (255, 90, 70), 3, spread=34)
                 tname = (KINDS.get(target["kind"]) or BUILD_KINDS.get(target["kind"]) or {"name": target["kind"]})["name"]
                 self.log("%s tears into %s for %d" % (KINDS[e["kind"]]["name"], tname, dmg))
                 if target["hp"] <= 0:
@@ -948,6 +961,7 @@ class Demo:
         for e in list(self.enemy_units()):
             if abs(e["x"] - tx) <= 1 and abs(e["y"] - ty) <= 1:
                 e["hp"] -= dmg
+                self._spark(e["x"], e["y"], (255, 220, 130), 3, spread=30)
                 hit.append(e)
         self.cat_flash = [tx, ty, 0.4]
         self._add_xp(len(hit) + 2)
@@ -973,6 +987,7 @@ class Demo:
         unit["ap"] -= 5
         dmg = unit["atk"] * 2 + random.randint(-1, 2)
         self.cat_flash = [tx, ty, 0.5]
+        self._spark(tx, ty, (255, 180, 90), 8, spread=60)
         self._add_xp(4)
         tgt["hp"] -= dmg
         tname = (KINDS.get(tgt["kind"]) or {"name": tgt["kind"]})["name"]
@@ -1119,6 +1134,26 @@ class Demo:
             self.cat_flash[2] -= dt
             if self.cat_flash[2] <= 0:
                 self.cat_flash = None
+        self.embers.update(dt)
+        for p in self.particles:
+            p["t"] += dt
+            p["x"] += p["vx"] * dt
+            p["y"] += p["vy"] * dt
+        self.particles = [p for p in self.particles if p["t"] < p["life"]]
+
+    def _spark(self, tx, ty, col, n=4, spread=46):
+        cx, cy = tx * TILE + BOARD_X + 16, ty * TILE + BOARD_Y + 16
+        for _ in range(n):
+            self.particles.append({
+                "x": cx + random.uniform(-6, 6),
+                "y": cy + random.uniform(-6, 6),
+                "vx": random.uniform(-spread, spread),
+                "vy": random.uniform(-spread * 1.4, 6),
+                "t": 0,
+                "life": random.uniform(0.25, 0.55),
+                "size": random.randint(1, 3),
+                "col": col,
+            })
 
     def _click_cell(self, pos):
         pass
@@ -1134,6 +1169,7 @@ class Demo:
         self._render_board()
         self._render_units()
         self._render_buildings()
+        self._render_fx()
         self._render_topbar()
         self._render_panel()
         self._render_log()
@@ -1197,10 +1233,17 @@ class Demo:
     def _sprite_kind(self, unit):
         return unit["kind"]
 
+    def _render_fx(self):
+        self.embers.render(self.screen, BOARD_X, BOARD_Y)
+        for p in self.particles:
+            pygame.draw.rect(self.screen, p["col"],
+                             (int(p["x"]), int(p["y"]), p["size"], p["size"]))
+
     def _render_units(self):
         sel = self.selected
         for u in self.units:
             px, py = u["x"] * TILE + BOARD_X, u["y"] * TILE + BOARD_Y
+            self.screen.blit(self._shadow, (px + 6, py + 25))
             spr = get_sprite(self._sprite_kind(u))
             self.screen.blit(spr, (px + 2, py + 2))
             if self.phase == "player" and u["team"] == 0 and u["ap"] <= 0:
@@ -1232,6 +1275,9 @@ class Demo:
         if self.cat_flash:
             fx, fy, ft = self.cat_flash
             px, py = fx * TILE + BOARD_X, fy * TILE + BOARD_Y
+            gf = self._glow.copy()
+            gf.set_alpha(int(200 * min(1.0, ft / 0.45)))
+            self.screen.blit(gf, (px + 16 - gf.get_width() // 2, py + 16 - gf.get_height() // 2))
             spr = get_sprite("cat").copy()
             spr.set_alpha(255 if int(ft * 20) % 2 == 0 else 130)
             self.screen.blit(spr, (px + 6, py + 16))
@@ -1239,6 +1285,7 @@ class Demo:
     def _render_buildings(self):
         for b in self.buildings:
             px, py = b["x"] * TILE + BOARD_X, b["y"] * TILE + BOARD_Y
+            self.screen.blit(self._shadow, (px + 6, py + 27))
             spr = get_sprite(b["kind"])
             if b["kind"] == "van":
                 self.screen.blit(spr, (px - 8, py - 2))

@@ -12,7 +12,34 @@ Folder: `assets/portraits/`  -  File: `<key>.png` (recommended 160x160).
 
 | Key | Status | Used as |
 |---|---|---|
+| beast | PLACEHOLDER | Enemy the Pit Lord himself (Boss) - The Pit Lord's Chamber |
+| beer | PLACEHOLDER | Item a warm beer - The Stage of Sin |
+| blood_puddle | PLACEHOLDER | Item a pool of blood - Backstage Gore |
+| booth_earplugs | PLACEHOLDER | Item sound-dampening earplugs - The Sound Booth of Despair |
+| broken_bottle | PLACEHOLDER | Item the Broken Bottle - Backstage Gore |
+| chamber_vial | PLACEHOLDER | Item a vial of Pit Lord blood - The Pit Lord's Chamber |
+| corpse | PLACEHOLDER | Enemy the Reanimated Roadie - Backstage Gore |
+| crypt_key | PLACEHOLDER | Item the DO NOT USE key - The Stage of Sin |
+| demon | PLACEHOLDER | Enemy the Pit Lord's Enforcer - The Merch Table of Madness |
+| energy_drink | PLACEHOLDER | Item a healing item - Backstage Gore |
+| engineer | PLACEHOLDER | Enemy the Sound Engineer - The Sound Booth of Despair |
+| guitaraxe | PLACEHOLDER | Item the Guitar-Axe - The Mosh Pit of Souls |
+| last_roadie | PLACEHOLDER | NPC 'Last Roadie' - The Green Room of Vile |
+| merch_bloody_rag | PLACEHOLDER | Item a bloody rag - The Merch Table of Madness |
+| mic | PLACEHOLDER | Item a stage mic - The Stage of Sin |
+| mixer_fader | PLACEHOLDER | Item the Master Fader - The Sound Booth of Despair |
+| mysterious_lager | PLACEHOLDER | Item a laced lager - The Merch Table of Madness |
+| pit_mystery_vial | PLACEHOLDER | Item a glowing vial - The Mosh Pit of Souls |
 | player | PLACEHOLDER | menu, cutscenes, HUD banners |
+| roadie | PLACEHOLDER | NPC 'Roadie' - The Stage of Sin |
+| shadow | PLACEHOLDER | Enemy the Stage Ninja - Backstage Gore |
+| sketchy_vendor | PLACEHOLDER | NPC 'Sketchy Vendor' - The Merch Table of Madness |
+| tome_double_down | PLACEHOLDER | Item a cursed vinyl - The Sound Booth of Despair |
+| tome_feedback_howl | PLACEHOLDER | Item a rusted effects pedal - The Mosh Pit of Souls |
+| vip_blood | PLACEHOLDER | Item a slick of blood - The Green Room of Vile |
+| vip_broken_lamp | PLACEHOLDER | Item a cracked stage lamp - The Green Room of Vile |
+| vip_energy_drink | PLACEHOLDER | Item a sketchy drink - The Green Room of Vile |
+| zombie | PLACEHOLDER | Enemy the Zombie Fan - The Stage of Sin |
 
 ## Music - key moments
 

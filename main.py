@@ -9,6 +9,7 @@ import array
 from enum import Enum, auto
 
 import battle_bridge
+import fxkit
 
 try:
     import numpy as np
@@ -1272,8 +1273,11 @@ class Player:
                 self.anim_frame += 1
 
     def render(self, surface, cam_x=0, cam_y=0):
-        PixelArt.draw_character(surface, self.x - cam_x, self.y - cam_y,
-                                self.facing, self.anim_frame)
+        sx = self.x - cam_x
+        sy = self.y - cam_y
+        bob = int(math.sin(pygame.time.get_ticks() * 0.006 + self.anim_frame * 0.8) * 2)
+        pygame.draw.ellipse(surface, (12, 8, 8), (sx - 9, sy + 5, 18, 6))
+        PixelArt.draw_character(surface, sx, sy + bob, self.facing, self.anim_frame)
 
     def tile_pos(self):
         return int(self.x // TILE), int(self.y // TILE)
@@ -1772,6 +1776,7 @@ class Game:
         self.state = GameState.MENU
         self.current_room = None
         self.room_map = {}
+        self.embers = None
         self.transition_alpha = 0
         self.transitioning = False
         self.transition_target = None
@@ -2850,6 +2855,14 @@ class Game:
         self.state = GameState.PLAYING
 
     def update(self):
+        if self.current_room and (self.embers is None or getattr(self.embers, "room_name", None) != self.current_room.name):
+            base = self.current_room.ambient_color
+            acc = tuple(min(255, c + 45) for c in base)
+            hot = (max(90, base[0] + 60), max(50, base[1] + 55), max(30, base[2] + 45))
+            self.embers = fxkit.Drift(SCREEN_W, SCREEN_H, [base, acc, hot], 26)
+            self.embers.room_name = self.current_room.name
+        if self.embers and self.state == GameState.PLAYING and not self.combat.active:
+            self.embers.update(1 / 30.0)
         ann = sound.take_announce()
         if ann:
             self.announce_track(ann)
@@ -2950,6 +2963,8 @@ class Game:
                     locked_keys.add(id(d))
         self.current_room.render(screen, cam_x + camera.x, cam_y + camera.y, locked_door_keys=locked_keys)
         self.player.render(screen, cam_x + camera.x, cam_y + camera.y)
+        if self.embers:
+            self.embers.render(screen)
         screen.blit(self.vignette, (0, 0))
         self._render_hud()
 
