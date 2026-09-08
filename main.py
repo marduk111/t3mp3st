@@ -65,6 +65,44 @@ def load_music_files():
     return tracks
 
 
+# Human-readable labels for item interact keys (shared by the on-screen
+# interaction prompt and the generated ASSET_MANIFEST.md reference).
+ITEM_LABELS = {
+    "beer": "a warm beer",
+    "microphone": "a stage mic",
+    "key": "the rusted key",
+    "crypt_key": "the DO NOT USE key",
+    "weapon": "a shattered bottle",
+    "health": "a bloodied rag",
+    "blood": "a pool of blood",
+    "blood_puddle": "a pool of blood",
+    "mysterious_lager": "a laced lager",
+    "merch_bloody_rag": "a bloody rag",
+    "guitaraxe": "the Guitar-Axe",
+    "mixer_fader": "the Master Fader",
+    "broken_bottle": "the Broken Bottle",
+    "pit_mystery_vial": "a glowing vial",
+    "vip_broken_lamp": "a cracked stage lamp",
+    "vip_energy_drink": "a sketchy drink",
+    "vip_blood": "a slick of blood",
+    "chamber_vial": "a vial of Pit Lord blood",
+    "tome_power_chord": "an ancient setlist",
+    "tome_double_down": "a cursed vinyl",
+    "tome_feedback_howl": "a rusted effects pedal",
+    "booth_earplugs": "sound-dampening earplugs",
+}
+
+TYPE_LABELS = {
+    "beer": "a beer",
+    "microphone": "a stage mic",
+    "key": "a key",
+    "weapon": "a weapon",
+    "health": "a healing item",
+    "blood": "blood",
+    "tome": "a tome of power",
+}
+
+
 class GameState(Enum):
     MENU = auto()
     PLAYING = auto()
@@ -217,6 +255,26 @@ class ProceduralAudio:
 
 
 class SoundManager:
+    # Narrative music slots. Players can drop files matching these names
+    # (or numbered variants like 01-stage.mp3) into assets/music/ and they
+    # play at the matching moment in-game.
+    MUSIC_SLOTS = [
+        "menu", "intro", "stage", "backstage", "merch", "pit", "greenroom",
+        "booth", "chamber", "combat", "boss", "levelup", "discovery",
+        "victory", "ending", "credits",
+    ]
+
+    # Room name -> music slot played while exploring that room.
+    ROOM_SLOT = {
+        "The Stage of Sin": "stage",
+        "Backstage Gore": "backstage",
+        "The Merch Table of Madness": "merch",
+        "The Mosh Pit of Souls": "pit",
+        "The Green Room of Vile": "greenroom",
+        "The Sound Booth of Despair": "booth",
+        "The Pit Lord's Chamber": "chamber",
+    }
+
     def __init__(self):
         self.external_tracks = load_music_files()
         self.current_track = -1
@@ -225,16 +283,22 @@ class SoundManager:
         self.muted = False
         self.sfx_cache = {}
         self.music_channel = None
+        self.jingle_channel = None
         self.using_external = False
 
         try:
-            pygame.mixer.set_num_channels(4)
+            pygame.mixer.set_num_channels(8)
             self.music_channel = pygame.mixer.Channel(0)
+            self.jingle_channel = pygame.mixer.Channel(1)
         except Exception:
-            pass
+            self.jingle_channel = None
 
         self._generate_sfx()
         self._generate_music_loops()
+        self.slots = self._scan_music_slots()
+        self.ambient_slot = None
+        self.jingle_cache = {}
+        self._pending_announce = False
 
     def _generate_sfx(self):
         self.sfx_cache["hit"] = ProceduralAudio.generate_hit()
@@ -247,54 +311,139 @@ class SoundManager:
         self.menu_drone = ProceduralAudio.generate_menu_drone()
         self.combat_riff = ProceduralAudio.generate_combat_riff()
 
-    def play_menu_music(self):
-        if self.muted or not self.menu_drone:
+    @staticmethod
+    def _strip_numeric_prefix(name):
+        i = 0
+        while i < len(name) and name[i].isdigit():
+            i += 1
+        if i and i < len(name) and name[i] in ("-", "_", " "):
+            i += 1
+        return name[i:]
+
+    def _scan_music_slots(self):
+        slots = {}
+        if os.path.isdir(MUSIC_DIR):
+            for f in sorted(os.listdir(MUSIC_DIR)):
+                if not f.lower().endswith((".mp3", ".ogg", ".wav")):
+                    continue
+                base = os.path.splitext(f)[0].lower()
+                stripped = self._strip_numeric_prefix(base).lower()
+                for slot in self.MUSIC_SLOTS:
+                    if slot in (base, stripped):
+                        slots.setdefault(slot, os.path.join(MUSIC_DIR, f))
+        return slots
+
+    def play_ambient(self, slot, force=True):
+        if self.muted:
+            return
+        path = self.slots.get(slot)
+        if not path:
+            if slot in ("menu", "intro", "ending", "credits"):
+                self._play_procedural("menu")
+            elif slot in ("combat", "boss"):
+                self._play_procedural("combat")
+            else:
+                self._stop_procedural()
+                self.stop_file()
+                self.ambient_slot = None
+            return
+        self._stop_procedural()
+        if force or self.ambient_slot != slot or not self._file_playing():
+            try:
+                pygame.mixer.music.load(path)
+                pygame.mixer.music.set_volume(0 if self.muted else self.music_volume)
+                pygame.mixer.music.play(-1)
+                self.using_external = True
+                self.ambient_slot = slot
+                self._pending_announce = True
+            except Exception:
+                pass
+
+    def _play_procedural(self, kind):
+        self.stop_file()
+        snd = self.menu_drone if kind == "menu" else self.combat_riff
+        if not snd:
             return
         try:
-            self.menu_drone.play(-1)
+            snd.play(-1)
         except Exception:
             pass
+        self.ambient_slot = kind
+        self._pending_announce = True
 
-    def stop_menu_music(self):
+    def _stop_procedural(self):
         try:
             self.menu_drone.stop()
-        except Exception:
-            pass
-
-    def play_combat_music(self):
-        if self.muted or not self.combat_riff:
-            return
-        try:
-            self.combat_riff.play(-1)
-        except Exception:
-            pass
-
-    def stop_combat_music(self):
-        try:
             self.combat_riff.stop()
         except Exception:
             pass
 
-    def play_next_track(self):
-        if not self.external_tracks:
-            return False
-        self.current_track = (self.current_track + 1) % len(self.external_tracks)
+    def stop_file(self):
         try:
-            pygame.mixer.music.load(self.external_tracks[self.current_track]["path"])
-            pygame.mixer.music.set_volume(0 if self.muted else self.music_volume)
-            pygame.mixer.music.play(-1)
-            self.using_external = True
-            return True
+            pygame.mixer.music.stop()
+        except Exception:
+            pass
+
+    def _file_playing(self):
+        try:
+            return bool(pygame.mixer.music.get_busy())
         except Exception:
             return False
+
+    def play_menu_music(self):
+        self.play_ambient("menu", force=True)
+
+    def stop_menu_music(self):
+        self.stop_music()
+
+    def play_combat_music(self):
+        self.play_ambient("combat", force=True)
+
+    def stop_combat_music(self):
+        if self.ambient_slot in ("combat", "boss"):
+            self._stop_procedural()
+            self.stop_file()
+            self.ambient_slot = None
+        else:
+            self._stop_procedural()
+
+    def jingle(self, slot):
+        path = self.slots.get(slot)
+        if not path or self.muted or not self.jingle_channel:
+            return
+        snd = self.jingle_cache.get(slot)
+        if snd is None:
+            try:
+                snd = pygame.mixer.Sound(path)
+            except Exception:
+                return
+            self.jingle_cache[slot] = snd
+        try:
+            self.jingle_channel.play(snd)
+        except Exception:
+            pass
+
+    def current_track_name(self):
+        if self.ambient_slot:
+            path = self.slots.get(self.ambient_slot)
+            if path:
+                return os.path.basename(path)
+            if self.ambient_slot == "menu":
+                return "Procedural Hellnoise (menu drone)"
+            if self.ambient_slot in ("combat", "boss"):
+                return "Procedural Combat Riff"
+        return "silence"
+
+    def take_announce(self):
+        if not self._pending_announce:
+            return None
+        self._pending_announce = False
+        return self.current_track_name()
 
     def stop_music(self):
         pygame.mixer.music.stop()
-        try:
-            self.menu_drone.stop()
-            self.combat_riff.stop()
-        except Exception:
-            pass
+        self._stop_procedural()
+        self.ambient_slot = None
 
     def play_sfx(self, name):
         snd = self.sfx_cache.get(name)
@@ -306,12 +455,19 @@ class SoundManager:
 
     def toggle_mute(self):
         self.muted = not self.muted
-        pygame.mixer.music.set_volume(0 if self.muted else self.music_volume)
+        v = 0 if self.muted else self.music_volume
+        try:
+            pygame.mixer.music.set_volume(v)
+        except Exception:
+            pass
+        try:
+            if self.music_channel:
+                self.music_channel.set_volume(v)
+        except Exception:
+            pass
 
     def get_track_name(self):
-        if self.using_external and 0 <= self.current_track < len(self.external_tracks):
-            return self.external_tracks[self.current_track]["name"]
-        return "Procedural Hellnoise"
+        return self.current_track_name()
 
 
 sound = SoundManager()
@@ -1346,7 +1502,8 @@ class CombatSystem:
                 self.options.append(sid)
         self.options += ["Taunt", "Flee"]
 
-        sound.play_combat_music()
+        is_boss = bool(enemy.get("boss")) or enemy["type"] == "beast"
+        sound.play_ambient("boss" if is_boss else "combat", force=True)
 
     def _skill_affordable(self, skill_id, player_ref):
         sk = SKILLS.get(skill_id)
@@ -1874,6 +2031,7 @@ class Game:
             "The Sound Booth of Despair": room_booth,
         }
         self.current_room = room_stage
+        self.generate_asset_manifest()
 
     def transition_to(self, room_name, spawn_x, spawn_y, callback=None):
         self.transitioning = True
@@ -1891,6 +2049,7 @@ class Game:
         self.help_banner_timer = frames
 
     def show_level_up(self):
+        sound.jingle("levelup")
         parts = [f"LEVEL UP! You are now Level {self.player.level}.",
                  "Max HP +8, ATK +2, DEF +1. Fully healed!"]
         if self.combat.skills_gained:
@@ -1948,6 +2107,7 @@ class Game:
         self.story_flags = {}
         self.setup_rooms()
         self.state = GameState.CUTSCENE
+        sound.play_ambient("intro", force=True)
         self.cutscene.start([
             "The gig was going great.",
             "300 sweaty bodies screaming our name.",
@@ -1962,14 +2122,101 @@ class Game:
 
     def after_intro(self):
         self.state = GameState.PLAYING
-        sound.play_menu_music()
+        self._sync_room_music()
         self.show_room_objective()
         self.tutorial_once("tut_move",
                            "TO MOVE: WASD or arrow keys. Walk up to things and press SPACE/ENTER to interact.",
                            frames=360)
 
+    def _sync_room_music(self):
+        if self.current_room:
+            slot = SoundManager.ROOM_SLOT.get(self.current_room.name)
+            if slot:
+                sound.play_ambient(slot, force=True)
+
+    def generate_asset_manifest(self, path=None):
+        path = path or os.path.join(ASSETS, "ASSET_MANIFEST.md")
+        lines = [
+            "# T3MP3ST - Asset Manifest",
+            "",
+            "Auto-generated by the game every time you start or load a game. You don't edit",
+            "this file - drop your own art and music into the folders below using the exact",
+            "names shown and they replace the procedurally generated placeholders automatically.",
+            "",
+            "Legend: PLACEHOLDER = generated pixel-art by the game | CUSTOM = your file was found",
+            "",
+        ]
+
+        lines += ["## Portraits & Mugshots", "",
+                  "Folder: `assets/portraits/`  -  File: `<key>.png` (recommended 160x160).",
+                  "",
+                  "| Key | Status | Used as |", "|---|---|---|"]
+        rows = {}
+        rows["player"] = ("The protagonist (Belligerent Dickhead)", "menu, cutscenes, HUD banners")
+        for room in self.room_map.values():
+            for npc in room.npcs:
+                key = npc["name"].lower().replace(" ", "_")
+                where = f"NPC '{npc['name']}' - {room.name}"
+                rows.setdefault(key, (npc["name"], where))
+            for e in room.enemies:
+                key = e["type"].lower().replace(" ", "_")
+                name = CombatSystem.ENEMY_NAMES.get(e["type"], e["type"].title())
+                if e.get("boss"):
+                    name += " (Boss)"
+                where = f"Enemy {name} - {room.name}"
+                rows.setdefault(key, (name, where))
+            for it in room.items:
+                ix = it.get("interact", "")
+                key = str(ix).lower().replace(" ", "_")
+                if not key:
+                    continue
+                label = ITEM_LABELS.get(ix, TYPE_LABELS.get(it.get("type"), ix.title()))
+                where = f"Item {label} - {room.name}"
+                rows.setdefault(key, (label, where))
+        for key, (label, where) in sorted(rows.items()):
+            status = "CUSTOM" if os.path.exists(os.path.join(PORTRAITS_DIR, key + ".png")) else "PLACEHOLDER"
+            lines.append(f"| {key} | {status} | {where} |")
+
+        lines += ["", "## Music - key moments", "",
+                  "Folder: `assets/music/`.  File: `<slot>.mp3` (or `.ogg` / `.wav`).",
+                  "Numbered variants work too: `01-stage.mp3` is the same slot as `stage.mp3`.",
+                  "Slots with no file fall back to procedural audio (menu/combat) or silence.",
+                  "",
+                  "| Slot | File | Plays when | File status |", "|---|---|---|---|"]
+        moment = {
+            "menu": "Main menu",
+            "intro": "Opening cutscene",
+            "stage": "The Stage of Sin",
+            "backstage": "Backstage Gore",
+            "merch": "The Merch Table of Madness",
+            "pit": "The Mosh Pit of Souls",
+            "greenroom": "The Green Room of Vile",
+            "booth": "The Sound Booth of Despair",
+            "chamber": "The Pit Lord's Chamber",
+            "combat": "Any normal fight",
+            "boss": "Pit Lord's Enforcer or the Beast (boss fight)",
+            "levelup": "LEVEL UP banner (one-shot sting)",
+            "discovery": "Unlocking a new ability tome (one-shot sting)",
+            "victory": "Beast defeated (one-shot sting)",
+            "ending": "Ending cutscene",
+            "credits": "Credits roll",
+        }
+        for slot in SoundManager.MUSIC_SLOTS:
+            file_status = "found" if slot in sound.slots else "missing"
+            lines.append(f"| {slot} | {slot}.mp3 | {moment.get(slot, slot)} | {file_status} |")
+
+        lines += ["",
+                  "_This file regenerates on every launch; your artwork and music files are never touched._",
+                  ""]
+        try:
+            with open(path, "w", encoding="utf-8") as f:
+                f.write("\n".join(lines))
+        except Exception:
+            pass
+
     def start_ending(self):
         self.state = GameState.CUTSCENE
+        sound.play_ambient("ending", force=True)
         self.cutscene.start([
             "The Pit Lord collapses into the pit he came from.",
             "The lights come up. The PA crackles to life.",
@@ -1985,7 +2232,7 @@ class Game:
 
     def after_ending(self):
         self.state = GameState.CREDITS
-        sound.stop_menu_music()
+        sound.play_ambient("credits", force=True)
 
     def handle_menu_input(self, event):
         if event.type == pygame.KEYDOWN:
@@ -1994,13 +2241,16 @@ class Game:
             elif event.key == pygame.K_DOWN:
                 self.menu_select = (self.menu_select + 1) % 4
             elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
-                sound.stop_menu_music()
+                if self.menu_select in (0, 1):
+                    sound.stop_music()
                 if self.menu_select == 0:
                     self.start_game()
                 elif self.menu_select == 1:
                     self.load_game()
+                    self._sync_room_music()
                 elif self.menu_select == 2:
                     self.state = GameState.CREDITS
+                    sound.play_ambient("credits", force=True)
                 elif self.menu_select == 3:
                     pygame.quit()
                     sys.exit()
@@ -2078,18 +2328,7 @@ class Game:
         d, target, kind = found
         if kind == "item":
             ix = target.get("interact", "")
-            labels = {
-                "beer": "a warm beer", "microphone": "a stage mic",
-                "key": "a rusted key", "weapon": "a shattered bottle",
-                "health": "a bloodied rag", "blood": "a pool of blood",
-                "mysterious_lager": "a laced lager", "merch_bloody_rag": "a bloody rag",
-                "guitaraxe": "the Guitar-Axe", "pit_mystery_vial": "a glowing vial",
-                "vip_broken_lamp": "a cracked stage lamp", "vip_energy_drink": "a sketchy drink",
-                "vip_blood": "a slick of blood", "chamber_vial": "a vial of Pit Lord blood",
-                "tome_power_chord": "an ancient setlist", "tome_double_down": "a cursed vinyl",
-                "tome_feedback_howl": "a rusted effects pedal", "booth_earplugs": "sound-dampening earplugs",
-            }
-            label = labels.get(ix, labels.get(target["type"], "an object"))
+            label = ITEM_LABELS.get(ix, TYPE_LABELS.get(target["type"], "an object"))
             return f"[SPACE] Take {label}"
         elif kind == "npc":
             return f"[SPACE] Talk to {target['name']}"
@@ -2162,14 +2401,17 @@ class Game:
                             self.show_help("The Enforcer is down. The great gate to the Pit Lord's Chamber has opened!",
                                            frames=300)
                         if e and e.get("interact") == "the_beast":
+                            sound.jingle("victory")
                             self.state = GameState.PLAYING
                             self.start_ending()
                             return
                         if self.combat.leveled_up:
                             self.show_level_up()
                         self.state = GameState.PLAYING
+                        self._sync_room_music()
                     else:
                         self.state = GameState.PLAYING
+                        self._sync_room_music()
             elif self.combat.player_turn:
                 keys = [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4,
                         pygame.K_5, pygame.K_6, pygame.K_7, pygame.K_8, pygame.K_9]
@@ -2349,6 +2591,7 @@ class Game:
             item["active"] = False
             sound.play_sfx("pickup")
             if self.player.unlock_skill("power_chord"):
+                sound.jingle("discovery")
                 self.dialogue.start([
                     "A torn setlist scrawled in crayon. The riffs are written in blood.",
                     "You study it. The first note splits the air.",
@@ -2365,6 +2608,7 @@ class Game:
             item["active"] = False
             sound.play_sfx("pickup")
             if self.player.unlock_skill("double_down"):
+                sound.jingle("discovery")
                 self.dialogue.start([
                     "A cursed vinyl etched with anger. Every groove is a scream.",
                     "You listen until the anger becomes yours.",
@@ -2381,6 +2625,7 @@ class Game:
             item["active"] = False
             sound.play_sfx("pickup")
             if self.player.unlock_skill("feedback_howl"):
+                sound.jingle("discovery")
                 self.dialogue.start([
                     "A rusted pedal marked 'DO NOT STEP'. You step on it.",
                     "The feedback howl lives inside the casing now. And inside you.",
@@ -2594,6 +2839,9 @@ class Game:
         self.state = GameState.PLAYING
 
     def update(self):
+        ann = sound.take_announce()
+        if ann:
+            self.announce_track(ann)
         if self.transitioning:
             self.transition_alpha = min(255, self.transition_alpha + 15)
             if self.transition_alpha >= 255:
@@ -2604,6 +2852,7 @@ class Game:
                 self.player.y = sy * TILE + TILE // 2
                 self.transitioning = False
                 self.show_room_objective()
+                self._sync_room_music()
                 if self.transition_callback:
                     cb = self.transition_callback
                     self.transition_callback = None
@@ -2669,7 +2918,7 @@ class Game:
 
         hints = [
             "WASD: Move | SPACE/ENTER: Interact | I: Inventory | F: Scream (Heal when GRIT full) | F11: Fullscreen",
-            "M: Mute | F5: Save | Drop MP3s in assets/music/ for custom tracks",
+            "M: Mute | F5: Save | Drop music by slot name in assets/music/ - see ASSET_MANIFEST.md",
         ]
         for i, h in enumerate(hints):
             ht = fonts.render_small(h, (60, 30, 30))
@@ -2888,6 +3137,8 @@ class Game:
 
 def main():
     game = Game()
+    game.generate_asset_manifest()
+    sound.play_menu_music()
     running = True
 
     while running:
@@ -2898,6 +3149,7 @@ def main():
                 if event.key == pygame.K_ESCAPE:
                     if game.state == GameState.PLAYING:
                         game.state = GameState.MENU
+                        sound.play_menu_music()
                     elif game.state == GameState.INVENTORY:
                         game.state = GameState.PLAYING
 
@@ -2919,11 +3171,13 @@ def main():
                 if event.type == pygame.KEYDOWN:
                     if event.key in (pygame.K_RETURN, pygame.K_SPACE):
                         game.state = GameState.MENU
+                        sound.play_menu_music()
                     elif event.key == pygame.K_q:
                         running = False
             elif game.state == GameState.CREDITS:
                 if event.type == pygame.KEYDOWN:
                     game.state = GameState.MENU
+                    sound.play_menu_music()
 
         keys = pygame.key.get_pressed()
         if game.state == GameState.PLAYING and not game.dialogue.active and not game.combat.active:

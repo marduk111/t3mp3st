@@ -63,11 +63,20 @@ To drop in your real artwork later, save a PNG named after the entity into `asse
 - `player.png` — Belligerent Dickhead (shows on intro cutscene, dialogue, combat)
 - `zombie.png`, `corpse.png`, `shadow.png`, `demon.png`, `engineer.png`, `beast.png` — enemies
 - `roadie.png`, `last_roadie.png`, `sketchy_vendor.png` — NPCs
-- `beer.png`, `mic.png`, `crypt_key.png`, `broken_bottle.png`, `guitaraxe.png`, `tome_double_down.png`, etc. — items
+- `beer.png`, `mic.png`, `crypt_key.png`, `broken_bottle.png`, `guitaraxe.png`, `tome_double_down.png`, etc. — items (full list in **ASSET_MANIFEST.md**)
 
 Any PNG in `assets/portraits/` matching a portrait key **replaces** the placeholder automatically. Recommended size: 160x160.
 
 Portrait keys are lowercased with spaces replaced by underscores (e.g. an NPC named "Last Roadie" → `last_roadie.png`).
+
+## Asset Manifest
+
+**`ASSET_MANIFEST.md`** (created at the project root on launch) is your one-stop reference for every replaceable placeholder. It lists:
+
+- **Every portrait key** the game actually uses (characters, enemies, items, player) with its status (`PLACEHOLDER` → still auto-generated, `CUSTOM` → your PNG is live) and where it appears.
+- **Every music slot** with its file name and the game moment it scores, plus live `missing`/`found` status.
+
+When you add or remove rooms, NPCs, enemies, or items, the manifest updates automatically on the next launch. **You never edit it by hand** — it's a checklist your artwork and music fill in.
 
 ## RPG Systems
 
@@ -107,16 +116,30 @@ The band was mid-set when the floor gave out. Now the singer is in hell, surroun
 
 ## Adding Your Music
 
-Drop MP3/OGG/WAV files into `assets/music/`. The game auto-detects them. Songs play in alphabetical order on loop.
+There's a **live asset manifest** that tells you exactly what to drop where. Launch the game once and check **`ASSET_MANIFEST.md`** in the project folder — it is regenerated on every start/load and lists every portrait and music slot with live status (`missing` / `found`).
 
-Suggested track names:
-- `01-stage.mp3` - The Stage of Sin
-- `02-backstage.mp3` - Backstage Gore
-- `03-merch.mp3` - The Merch Table of Madness
-- `04-pit.mp3` - The Mosh Pit of Souls
-- `05-greenroom.mp3` - The Green Room of Vile
-- `06-booth.mp3` - The Sound Booth of Despair
-- `07-chamber.mp3` - The Pit Lord's Chamber
+Music is **moment-based**: each game event looks for a file named after that event's slot in `assets/music/`. Drop `<slot>.mp3` (or `.ogg` / `.wav`) and it plays at that exact moment. Numbered names also work: `01-stage.mp3` = `stage.mp3`.
+
+| Slot | File | Plays when |
+|---|---|---|
+| menu | `menu.mp3` | Main menu |
+| intro | `intro.mp3` | Opening cutscene |
+| stage | `stage.mp3` | The Stage of Sin |
+| backstage | `backstage.mp3` | Backstage Gore |
+| merch | `merch.mp3` | The Merch Table of Madness |
+| pit | `pit.mp3` | The Mosh Pit of Souls |
+| greenroom | `greenroom.mp3` | The Green Room of Vile |
+| booth | `booth.mp3` | The Sound Booth of Despair |
+| chamber | `chamber.mp3` | The Pit Lord's Chamber |
+| combat | `combat.mp3` | Any normal fight |
+| boss | `boss.mp3` | Boss fights (Enforcer / Pit Lord) |
+| levelup | `levelup.mp3` | LEVEL UP banner (one-shot sting) |
+| discovery | `discovery.mp3` | Unlocking a new ability tome (one-shot sting) |
+| victory | `victory.mp3` | Beast defeated (one-shot sting) |
+| ending | `ending.mp3` | Ending cutscene |
+| credits | `credits.mp3` | Credits roll |
+
+Missing files fall back to the built-in procedural audio (menu drone / combat riff) or silence — the game never crashes on a missing track. A "Now Playing" readout shows the current file at the top of the screen when a track changes.
 
 ## Adding HD Images
 
@@ -124,7 +147,7 @@ Drop PNG/JPG files into `assets/images/`. These display as full-screen HD overla
 
 ## Adding Portrait Art
 
-See the **Portraits** section above — `assets/portraits/` holds per-character mugshots that replace placeholders.
+See the **Portraits** section above — `assets/portraits/` holds per-character mugshots that replace placeholders. The **Asset Manifest** lists every key currently in use.
 
 ## Adding Content
 
