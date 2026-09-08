@@ -20,6 +20,27 @@ No external assets required. All audio is procedurally generated.
 
 Found a bug? Record how you got there (keys pressed, what you saw) — the developer would love a minimal repro.
 
+## Stage Fright Tactics (Demo)
+
+A separate, self-contained battle-system feel-test in `rts_demo.py` — the future combat mode for the main game, built as its own file so it never touches the working RPG.
+
+```
+python rts_demo.py
+```
+
+It's a turn-based stage-defense battler, inspired by Blood Bowl action points + C&C/Advance Wars base building:
+
+- **AP per unit** — move = 1 AP/tile, melee = 3 AP, ranged = 4 AP. Spend each unit, then END TURN; the horde follows the same rules.
+- **Hold the Stage** — the Core must survive 4 waves. Lose the Core, lose the battle.
+- **GRIT economy** — trickle per kill + a wave-clear bonus. Spend it on Watchtowers (45, ~2 turns to build) or Groupies from the Support Van (20, hire with a Van queue).
+- **Shared band XP** — every hit, kill, and ability from *any* band member feeds one level pool (unlike WC3, grunts count too). Levels raise the whole team.
+- **Melee vs ranged** — clicks auto-resolve: adjacent targets take the melee attack (3 AP); targets beyond that (up to each unit's reach) get the ranged attack where a unit has one (4 AP). Units specialize — Groupies and the Bass Player are melee bruisers, and the Frontman's ranged hit is Azrael D Destroyer streaking in at range 3. Every skill-up is another way Azrael attacks: **SCREAM** (landing-zone blast) at band level 2, **BLITZ** (double shred at range) at level 4.
+- **Undo** — one-step undo on moves/attacks, plus confirm styling on the action panel.
+- **Music** — scans `assets/music/` for `combat1.mp3`, `combat2.mp3`, ... and `boss1.mp3`, ... and rotates through them so every battle sounds different (falls back to silence gracefully).
+- **Retry** — R restarts the battle on a freshly randomized board (different obstacles each run).
+
+This is a placeholder for the future hybrid: roam the RPG, trigger a battle, and fight it here.
+
 ## Controls
 
 | Key | Action |
@@ -119,6 +140,8 @@ The band was mid-set when the floor gave out. Now the singer is in hell, surroun
 There's a **live asset manifest** that tells you exactly what to drop where. Launch the game once and check **`ASSET_MANIFEST.md`** in the project folder — it is regenerated on every start/load and lists every portrait and music slot with live status (`missing` / `found`).
 
 Music is **moment-based**: each game event looks for a file named after that event's slot in `assets/music/`. Drop `<slot>.mp3` (or `.ogg` / `.wav`) and it plays at that exact moment. Numbered names also work: `01-stage.mp3` = `stage.mp3`.
+
+**Combat playlists** (used by the Stage Fright demo, and coming to the RPG's fights): drop several tracks as `combat1.mp3`, `combat2.mp3`, ... and the battle music rotates between them so no fight sounds identical. Same for `boss1.mp3`, `boss2.mp3`, ... in boss fights.
 
 | Slot | File | Plays when |
 |---|---|---|
