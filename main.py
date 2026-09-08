@@ -8,6 +8,8 @@ import struct
 import array
 from enum import Enum, auto
 
+import battle_bridge
+
 try:
     import numpy as np
     HAS_NUMPY = True
@@ -1781,7 +1783,7 @@ class Game:
         self.hd_timer = 0
         self.player = Player()
         self.dialogue = DialogueBox()
-        self.combat = CombatSystem()
+        self.combat = battle_bridge.BattleBridge(screen)
         self.cutscene = CutsceneSystem()
         self.track_announcement = ""
         self.track_announcement_timer = 0
@@ -2391,34 +2393,43 @@ class Game:
         if event.type == pygame.KEYDOWN:
             if self.combat.resolved:
                 if event.key in (pygame.K_RETURN, pygame.K_SPACE):
-                    self.combat.active = False
-                    if self.combat.result == "lose":
-                        self.state = GameState.GAME_OVER
-                    elif self.combat.result == "win":
-                        e = self.combat.enemy
-                        if e and e.get("interact") == "pit_lord":
-                            self.story_flags["pit_lord_defeated"] = True
-                            self.show_help("The Enforcer is down. The great gate to the Pit Lord's Chamber has opened!",
-                                           frames=300)
-                        if e and e.get("interact") == "the_beast":
-                            sound.jingle("victory")
-                            self.state = GameState.PLAYING
-                            self.start_ending()
-                            return
-                        if self.combat.leveled_up:
-                            self.show_level_up()
-                        self.state = GameState.PLAYING
-                        self._sync_room_music()
-                    else:
-                        self.state = GameState.PLAYING
-                        self._sync_room_music()
-            elif self.combat.player_turn:
+                    self._finish_combat()
+                return
+            if getattr(self.combat, "is_bridge", False):
+                return
+            if self.combat.player_turn:
                 keys = [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4,
                         pygame.K_5, pygame.K_6, pygame.K_7, pygame.K_8, pygame.K_9]
                 for i, key in enumerate(keys):
                     if event.key == key and i < len(self.combat.options):
                         self.combat.player_action(self.combat.options[i], self.player)
                         break
+        elif getattr(self.combat, "is_bridge", False) and not self.combat.resolved:
+            self.combat.handle_event(event)
+
+    def _finish_combat(self):
+        self.combat.active = False
+        if self.combat.result == "lose":
+            self.state = GameState.GAME_OVER
+            return
+        if self.combat.result != "win":
+            self.state = GameState.PLAYING
+            self._sync_room_music()
+            return
+        e = self.combat.enemy
+        if e and e.get("interact") == "pit_lord":
+            self.story_flags["pit_lord_defeated"] = True
+            self.show_help("The Enforcer is down. The great gate to the Pit Lord's Chamber has opened!",
+                           frames=300)
+        if e and e.get("interact") == "the_beast":
+            sound.jingle("victory")
+            self.state = GameState.PLAYING
+            self.start_ending()
+            return
+        if self.combat.leveled_up:
+            self.show_level_up()
+        self.state = GameState.PLAYING
+        self._sync_room_music()
 
     def interact_item(self, item):
         ix = item.get("interact", "")

@@ -408,7 +408,7 @@ class MusicCue:
 
 
 class Demo:
-    def __init__(self, screen):
+    def __init__(self, screen, autostart_music=True):
         self.screen = screen
         self.clock = pygame.time.Clock()
         self.font = self._font(18)
@@ -416,7 +416,8 @@ class Demo:
         self.font_lg = self._font(40)
         self.music = MusicCue()
         self.reset()
-        self.music.menu_loop()
+        if autostart_music:
+            self.music.menu_loop()
 
     def _font(self, size):
         try:
