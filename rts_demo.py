@@ -711,7 +711,7 @@ class Demo:
         if "unit" in target or "hp" in target and target.get("team") == 1:
             if target in self.units:
                 self.units.remove(target)
-                self.log("%s destroyed - +%d GRIT" % (KINDS[target["kind"]]["name"], KILL_GRIT))
+                self.log("%s destroyed - +%d GRIT" % (self._unit_name(target), KILL_GRIT))
                 self._add_xp(6)
                 if target["kind"] == "enforcer":
                     self.log("THE ENFORCER IS DOWN")
@@ -753,12 +753,12 @@ class Demo:
         })
         target["hp"] -= dmg
         self._add_xp(2)
-        name = KINDS[unit["kind"]]["name"]
+        name = self._unit_name(unit)
         if unit["kind"] == "frontman" and mode == "ranged":
             name = "AZRAEL D DESTROYER"
             self.cat_flash = [target["x"], target["y"], 0.35]
         self._spark(target["x"], target["y"], (255, 210, 120) if mode == "ranged" else (255, 120, 80), 5)
-        tname = (KINDS.get(target["kind"]) or BUILD_KINDS.get(target["kind"]) or {"name": target["kind"]})["name"]
+        tname = self._unit_name(target)
         if target["hp"] <= 0:
             self.log("%s obliterates %s" % (name, tname))
             self._kill(target)
@@ -832,8 +832,8 @@ class Demo:
                 dmg = base + random.randint(0, 1)
                 target["hp"] -= dmg
                 self._spark(target["x"], target["y"], (255, 90, 70), 3, spread=34)
-                tname = (KINDS.get(target["kind"]) or BUILD_KINDS.get(target["kind"]) or {"name": target["kind"]})["name"]
-                self.log("%s tears into %s for %d" % (KINDS[e["kind"]]["name"], tname, dmg))
+                tname = self._unit_name(target)
+                self.log("%s tears into %s for %d" % (self._unit_name(e), tname, dmg))
                 if target["hp"] <= 0:
                     self._kill(target)
             else:
@@ -1233,6 +1233,13 @@ class Demo:
     def _sprite_kind(self, unit):
         return unit["kind"]
 
+    def _unit_name(self, unit):
+        if unit.get("name"):
+            return unit["name"]
+        if "hp" in unit and "team" in unit:
+            return (KINDS.get(unit["kind"]) or {"name": unit["kind"]})["name"]
+        return (BUILD_KINDS.get(unit["kind"]) or {"name": unit["kind"]})["name"]
+
     def _render_fx(self):
         self.embers.render(self.screen, BOARD_X, BOARD_Y)
         for p in self.particles:
@@ -1332,7 +1339,7 @@ class Demo:
             return lines
         name = "UNIT"
         if "hp" in sel and "team" in sel:
-            name = KINDS.get(sel["kind"], {"name": sel["kind"]})["name"]
+            name = (KINDS.get(sel["kind"], {"name": sel["kind"]})["name"] if not sel.get("name") else sel["name"])
         else:
             name = BUILD_KINDS.get(sel["kind"], sel["kind"])["name"]
         lines.append((name, COL["gold"]))

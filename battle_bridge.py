@@ -1,4 +1,7 @@
+import random
+
 import pygame
+
 import rts_demo as rd
 
 XP_BASE = {
@@ -9,6 +12,54 @@ XP_BASE = {
     "engineer": 30,
     "beast": 150,
 }
+
+BANTER = {
+    "zombie": [
+        "Zombie Fan: 'I still have your setlist, dude... it's... the only thing... I ever loved...'",
+        "Zombie Fan: 'The mosh pit... never ends... down here...'",
+    ],
+    "corpse": [
+        "Reanimated Roadie: 'Even roadies die... but the tour... continues...'",
+        "Reanimated Roadie: 'I just wanted... to fix the monitors... why... why...'",
+    ],
+    "shadow": [
+        "Stage Ninja: 'Your stage presence... is misplaced. It belongs to me now.'",
+        "Stage Ninja: 'In the dark of the wings, I am the only real performer.'",
+    ],
+    "demon": [
+        "Pit Lord's Enforcer: 'The Beast has evolved the setlist. You're opening for oblivion.'",
+        "Pit Lord's Enforcer: 'I'll show you a breakdown.'",
+    ],
+    "engineer": [
+        "Sound Engineer: 'THE MIX IS WRONG. YOUR FACE IS WRONG. EVERYTHING IS WRONG.'",
+        "Sound Engineer: 'You hear that feedback? That's my soul. Still ringing.'",
+    ],
+    "beast": [
+        "PIT LORD: 'Little singer. You think your noise scares me?'",
+        "PIT LORD: 'Your band. Your crowd. Your soul. All booked. All mine.'",
+    ],
+}
+
+RETORT = [
+    "Belligerent Dickhead: 'You should've stayed a one-hit wonder.'",
+    "Belligerent Dickhead: 'My dog plays better than you, and he's a corpse too.'",
+    "Belligerent Dickhead: 'Let me autograph your face. Real close. With my boot.'",
+]
+
+VICTORY_LINES = {
+    "zombie": ["That's a review you won't recover from.", "Rest in pieces, groupie."],
+    "corpse": ["Next time, keep the monitors level with the living.", "Load-out's over, buddy."],
+    "shadow": ["Looks like the lights found you after all.", "Nope, still the loudest thing here."],
+    "demon": ["Your breakdown was mid. Mine's a knockout.", "Tell the Beast I want my own merch table."],
+    "engineer": ["Check the meters now. Flatlining.", "Rest of the board and board of rest."],
+    "beast": ["The noise won. Souls stay. Set's over.", "I'll handle the encore. You handle the pit."],
+}
+
+
+def _pick_victory_line(enemy_type):
+    pool = VICTORY_LINES.get(enemy_type)
+    import random
+    return random.choice(pool or ["And that's the encore."])
 
 
 class BattleBridge:
@@ -30,6 +81,7 @@ class BattleBridge:
         self.options = []
         self.boss = False
         self.kills_on_win = 0
+        self.victory_line = ""
 
     def start(self, enemy, player_ref):
         self.enemy = enemy
@@ -40,6 +92,7 @@ class BattleBridge:
         self.leveled_up = False
         self.skills_gained = []
         self.boss = bool(enemy.get("boss"))
+        self.victory_line = ""
 
         self.demo.reset()
         self.demo.state = rd.STATE_PLAY
@@ -54,6 +107,13 @@ class BattleBridge:
         if fm is not None:
             fm["atk"] = player_ref.attack
             fm["rng_atk"] = player_ref.attack
+        for line in BANTER.get(enemy.get("type"), []):
+            self.demo.log(line)
+            break
+        self.demo.log(random.choice(RETORT))
+        if not self.boss:
+            self.demo.banner = "CLICK A BAND MEMBER TO SELECT THEM"
+            self.demo.banner_t = 3.0
         self.active = True
 
     def _seed_boss(self, enemy):
@@ -68,15 +128,20 @@ class BattleBridge:
         boss["max_hp"] = hp
         boss["atk"] = 8 + enemy.get("defense", 5)
         if enemy.get("type") == "beast":
+            boss["name"] = "THE PIT LORD"
             self.demo.log("THE PIT LORD descends on the stage.")
             self.demo.banner = "THE PIT LORD"
         else:
+            boss["name"] = "PIT LORD'S ENFORCER"
             self.demo.log("PIT LORD'S ENFORCER descends on the stage.")
             self.demo.banner = "PIT LORD'S ENFORCER"
         self.demo.banner_t = 3.0
         self.demo.music.combat_loop(4, boss=True)
 
     def handle_event(self, event):
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_r and self.demo.state != rd.STATE_TITLE:
+            self.start(self.enemy, self.player_ref)
+            return
         self.demo.handle_event(event)
 
     def update(self, player_ref):
@@ -92,6 +157,7 @@ class BattleBridge:
         player_ref.kills += self.kills_on_win
         self.xp_gained = XP_BASE.get(self.enemy.get("type"), 15) + self.kills_on_win + self.demo.level * 3
         self.leveled_up, self.skills_gained = player_ref.add_xp(self.xp_gained)
+        self.victory_line = _pick_victory_line(self.enemy.get("type"))
         self.result = "win"
         self.resolved = True
         pygame.mixer.music.stop()
@@ -112,10 +178,14 @@ class BattleBridge:
             sm = pygame.font.SysFont("consolas", 18)
             if self.result == "win":
                 top = big.render("THE STAGE HOLDS", True, (255, 220, 90))
+                line = sm.render(self.victory_line, True, (255, 200, 120))
                 sub = sm.render("XP +%d   GRIT +25   KILLS +%d   [ENTER]"
                                 % (self.xp_gained, self.kills_on_win), True, (200, 200, 200))
             else:
                 top = big.render("THE STAGE FALLS", True, (220, 60, 60))
+                line = None
                 sub = sm.render("[ENTER]", True, (200, 200, 200))
-            surface.blit(top, (rd.SCREEN_W // 2 - top.get_width() // 2, 300))
-            surface.blit(sub, (rd.SCREEN_W // 2 - sub.get_width() // 2, 370))
+            surface.blit(top, (rd.SCREEN_W // 2 - top.get_width() // 2, 290))
+            if line is not None:
+                surface.blit(line, (rd.SCREEN_W // 2 - line.get_width() // 2, 345))
+            surface.blit(sub, (rd.SCREEN_W // 2 - sub.get_width() // 2, 375))

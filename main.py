@@ -2063,7 +2063,7 @@ class Game:
             names = ", ".join(SKILLS[s]["name"] for s in self.combat.skills_gained)
             parts.append(f"New ability: {names}!")
             self.tutorial_once("tut_skills",
-                               "TIP: Abilities are cast in combat with their number key and cost GRIT or SANITY.",
+                               "TIP: New abilities unlock as your band levels up in battle. Select a band member and use the panel buttons.",
                                frames=300)
         self.objective_banner = "  ".join(parts)
         self.objective_banner_timer = 420
@@ -2614,7 +2614,7 @@ class Game:
                     "New ability unlocked: POWER CHORD (1.6x damage, costs 30 GRIT)"
                 ], "Belligerent Dickhead", (240, 130, 90))
                 self.tutorial_once("tut_skills",
-                                   "TIP: New abilities are cast in combat with their number key. Abilities cost GRIT or SANITY.")
+                                   "TIP: New abilities unlock as your band levels up in battle. Select a band member and use the panel buttons.")
             else:
                 self.dialogue.start([
                     "You already know this riff. The setlist crumbles."
@@ -2631,7 +2631,7 @@ class Game:
                     "New ability unlocked: DOUBLE DOWN (2.0x damage, costs 12 SANITY)"
                 ], "Belligerent Dickhead", (240, 130, 90))
                 self.tutorial_once("tut_skills",
-                                   "TIP: New abilities are cast in combat with their number key. Abilities cost GRIT or SANITY.")
+                                   "TIP: New abilities unlock as your band levels up in battle. Select a band member and use the panel buttons.")
             else:
                 self.dialogue.start([
                     "You've already internalized this one. The vinyl melts."
@@ -2648,7 +2648,7 @@ class Game:
                     "New ability unlocked: FEEDBACK HOWL (2.5x damage, costs 55 GRIT)"
                 ], "Belligerent Dickhead", (240, 130, 90))
                 self.tutorial_once("tut_skills",
-                                   "TIP: New abilities are cast in combat with their number key. Abilities cost GRIT or SANITY.")
+                                   "TIP: New abilities unlock as your band levels up in battle. Select a band member and use the panel buttons.")
             else:
                 self.dialogue.start([
                     "The pedal screams, but you've heard this song before."
@@ -3173,10 +3173,10 @@ def main():
                 running = False
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    if game.state == GameState.PLAYING:
+                    if not game.combat.active and game.state == GameState.PLAYING:
                         game.state = GameState.MENU
                         sound.play_menu_music()
-                    elif game.state == GameState.INVENTORY:
+                    elif not game.combat.active and game.state == GameState.INVENTORY:
                         game.state = GameState.PLAYING
 
             if game.cutscene.active:
