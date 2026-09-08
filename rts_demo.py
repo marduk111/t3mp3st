@@ -15,7 +15,6 @@ HUD_X = BOARD_X + BOARD_PX_W + 14
 HUD_W = SCREEN_W - HUD_X - 10
 LOG_Y = BOARD_Y + BOARD_PX_H + 8
 LOG_H = SCREEN_H - LOG_Y - 10
-BUTTON_Y = 190
 
 TILES_WALK = {"floor", "stage", "gate", "spawn", "cable"}
 
@@ -44,6 +43,17 @@ STATE_PLAY = 1
 STATE_WON = 2
 STATE_LOST = 3
 STATE_DONE = 4
+
+
+ACTED_OVERLAY = None
+
+
+def _acted_overlay():
+    global ACTED_OVERLAY
+    if ACTED_OVERLAY is None:
+        ACTED_OVERLAY = pygame.Surface((TILE, TILE), pygame.SRCALPHA)
+        ACTED_OVERLAY.fill((0, 0, 0, 150))
+    return ACTED_OVERLAY
 
 
 def make_sprite(rows, palette):
@@ -323,6 +333,8 @@ TITLE_LINES = [
     "End the band's turn, then the horde moves.",
     "GRIT is earned per kill and per wave - build",
     "Watchtowers (45) or hire Groupies from the Van (20).",
+    "Watchtowers auto-fire at every enemy in range (4)",
+    "once per round - they're your stage's backline.",
     "",
     "The whole band shares XP: every hit, kill and",
     "ability feeds the level-up.",
@@ -451,12 +463,17 @@ class Demo:
         mid = BOARD_H // 2
         self._add_building("core", 1, mid)
         self._add_building("van", 2, mid + 2)
-        self._add_building("tower", 4, mid - 2)
+        self._add_building("tower", 4, mid - 2, ready=True)
         self._add_unit("frontman", 2, mid - 1)
         self._add_unit("groupie", 3, mid)
         self._add_unit("groupie", 3, mid + 1)
         self.wave = 1
         self.turn = 1
+        self.selected = None
+        self.place_mode = None
+        self.phase = "player"
+        self.action_log = []
+        self.overlay = None
         self.log("THE HORDE DESCENDS ON THE STAGE")
         self.log("Hold the core ('The Stage') until all 4 waves fall")
         self._spawn_wave()
@@ -521,14 +538,14 @@ class Demo:
             "buff": 0,
         })
 
-    def _add_building(self, kind, x, y):
+    def _add_building(self, kind, x, y, ready=False):
         b = BUILD_KINDS[kind]
         self.buildings.append({
             "id": len(self.buildings),
             "kind": kind,
             "x": x, "y": y,
             "hp": b["hp"], "max_hp": b["hp"],
-            "constructing": 2 if kind == "tower" else 0,
+            "constructing": 0 if ready else (2 if kind == "tower" else 0),
         })
 
     def unit_at(self, x, y):
@@ -775,17 +792,14 @@ class Demo:
                 continue
             foes = [u for u in self.enemy_units()
                     if abs(b["x"] - u["x"]) + abs(b["y"] - u["y"]) <= 4]
-            if not foes:
-                continue
-            foes.sort(key=lambda u: abs(b["x"] - u["x"]) + abs(b["y"] - u["y"]))
-            t = foes[0]
-            dmg = random.randint(6, 9)
-            t["hp"] -= dmg
-            if t["hp"] <= 0:
-                self.log("Watchtower LIGHTS UP %s" % KINDS[t["kind"]]["name"])
-                self._kill(t)
-            else:
-                self.log("Watchtower snipes %s for %d" % (KINDS[t["kind"]]["name"], dmg))
+            for t in foes:
+                dmg = random.randint(5, 8)
+                t["hp"] -= dmg
+                if t["hp"] <= 0:
+                    self.log("Watchtower LIGHTS UP %s" % KINDS[t["kind"]]["name"])
+                    self._kill(t)
+                else:
+                    self.log("Watchtower snipes %s for %d" % (KINDS[t["kind"]]["name"], dmg))
 
     def _horde_act(self):
         foes = self.enemy_units()
@@ -1043,7 +1057,7 @@ class Demo:
 
     def _panel_click(self, pos):
         bx = HUD_X + 8
-        y = BUTTON_Y
+        y = self._buttons_y(self.selected)
         for label, key in self._buttons():
             rect = self._btn_rect(bx, y)
             if rect.collidepoint(pos):
@@ -1160,15 +1174,17 @@ class Demo:
                 if tile == "gate":
                     pygame.draw.rect(self.screen, (90, 40, 60), (px + 10, py + 10, 12, 12))
         sel_reach = None
+        sel_dist = None
         if self.selected and self.phase == "player" and self.selected.get("ap", 0) and "kind" in self.selected:
-            sel_reach = self.reachable(self.selected)
-        elif self.place_mode:
-            sel_reach = None
+            sel_dist, _ = self.paths(self.selected["x"], self.selected["y"])
+            sel_reach = {k for k, v in sel_dist.items() if 0 < v <= self.selected["ap"]}
         if sel_reach:
             for (rx, ry) in sel_reach:
                 px, py = rx * TILE + BOARD_X, ry * TILE + BOARD_Y
                 pygame.draw.rect(self.screen, (90, 200, 110), (px + 2, py + 2, TILE - 4, TILE - 4), 1)
                 pygame.draw.rect(self.screen, (60, 120, 75), (px + 4, py + 4, TILE - 8, TILE - 8))
+                cost_txt = self.font_sm.render(str(sel_dist[(rx, ry)]), True, (215, 235, 195))
+                self.screen.blit(cost_txt, (px + 4, py + 3))
         if self.place_mode:
             for ty in range(BOARD_H):
                 for tx in range(BOARD_W):
@@ -1186,21 +1202,32 @@ class Demo:
             px, py = u["x"] * TILE + BOARD_X, u["y"] * TILE + BOARD_Y
             spr = get_sprite(self._sprite_kind(u))
             self.screen.blit(spr, (px + 2, py + 2))
+            if self.phase == "player" and u["team"] == 0 and u["ap"] <= 0:
+                self.screen.blit(_acted_overlay(), (px, py))
             if u is sel:
                 pygame.draw.rect(self.screen, COL["gold"], (px + 1, py + 1, TILE - 2, TILE - 2), 2)
             bar_w = TILE - 6
             frac = max(0, u["hp"] / u["max_hp"])
             pygame.draw.rect(self.screen, (60, 40, 44), (px + 3, py + 26, bar_w, 3))
             pygame.draw.rect(self.screen, (200, 70, 60) if frac < 0.35 else (140, 210, 100), (px + 3, py + 26, int(bar_w * frac), 3))
-            ap_txt = self.font_sm.render(str(max(0, u["ap"])), True, COL["gold"] if u["ap"] > 0 else COL["dim"])
-            self.screen.blit(ap_txt, (px + 2, py - 16))
+            badge = pygame.Rect(px, py - 17, TILE, 15)
+            pygame.draw.rect(self.screen, (14, 12, 20), badge)
+            pygame.draw.rect(self.screen, COL["gold"] if u["ap"] > 0 else (70, 66, 82), badge, 1)
+            ap_txt = self.font_sm.render("AP %d" % max(0, u["ap"]), True, COL["gold"] if u["ap"] > 0 else COL["dim"])
+            self.screen.blit(ap_txt, (px + 3, py - 16))
         if sel and sel["team"] == 0 and sel.get("ap", 0) > 0:
             for e in self.enemy_units():
                 d = abs(sel["x"] - e["x"]) + abs(sel["y"] - e["y"])
                 if d <= 1 and sel.get("atk", 0) > 0:
-                    pygame.draw.circle(self.screen, COL["red"], (e["x"] * TILE + BOARD_X + 16, e["y"] * TILE + BOARD_Y + 16), 18, 2)
+                    cost_txt = self.font_sm.render("3", True, COL["gold"])
                 elif 1 < d <= sel.get("range", 0) and sel.get("rng_atk", 0) > 0:
-                    pygame.draw.circle(self.screen, (255, 150, 60), (e["x"] * TILE + BOARD_X + 16, e["y"] * TILE + BOARD_Y + 16), 18, 2)
+                    cost_txt = self.font_sm.render("4", True, COL["gold"])
+                else:
+                    continue
+                epx, epy = e["x"] * TILE + BOARD_X, e["y"] * TILE + BOARD_Y
+                color = COL["red"] if d <= 1 else (255, 150, 60)
+                pygame.draw.circle(self.screen, color, (epx + 16, epy + 16), 18, 2)
+                self.screen.blit(cost_txt, (epx + TILE - 18, epy))
         if self.cat_flash:
             fx, fy, ft = self.cat_flash
             px, py = fx * TILE + BOARD_X, fy * TILE + BOARD_Y
@@ -1227,11 +1254,15 @@ class Demo:
 
     def _render_topbar(self):
         y = 10
+        ap_left = sum(u["ap"] for u in self.player_units())
+        ap_ready = sum(1 for u in self.player_units() if u["ap"] > 0)
+        ap_total = len(self.player_units())
         lines = [
             ("WAVE %d/4" % self.wave, COL["gold"]),
             ("TURN %d" % self.turn, COL["text"]),
             ("GRIT: %d" % self.grit, COL["green"]),
             ("BAND Lv.%d  XP:%d/%d" % (self.level, self.team_xp, 30 + (self.level - 1) * 26), COL["purple"]),
+            ("AP LEFT %d | READY %d/%d" % (ap_left, ap_ready, ap_total), COL["green"] if ap_ready else COL["dim"]),
         ]
         x = 20
         for txt, col in lines:
@@ -1246,45 +1277,58 @@ class Demo:
             self.screen.blit(ph, (SCREEN_W - ph.get_width() - 16, y))
         pygame.draw.line(self.screen, COL["panel"], (0, 62), (SCREEN_W, 62), 2)
 
+    def _panel_info_lines(self, sel):
+        lines = []
+        if not sel:
+            lines.append(("No selection", COL["dim"]))
+            return lines
+        name = "UNIT"
+        if "hp" in sel and "team" in sel:
+            name = KINDS.get(sel["kind"], {"name": sel["kind"]})["name"]
+        else:
+            name = BUILD_KINDS.get(sel["kind"], sel["kind"])["name"]
+        lines.append((name, COL["gold"]))
+        lines.append(("HP %d/%d" % (sel["hp"], sel["max_hp"]), COL["text"]))
+        if sel.get("kind") == "tower":
+            if sel.get("constructing", 0) > 0:
+                lines.append(("UNDER CONSTRUCTION (%d turns)" % sel["constructing"], COL["gold"]))
+            else:
+                lines.append(("AUTO-FIRE: every foe in RNG 4", COL["red"]))
+        if "ap" in sel:
+            lines.append(("AP %d/%d" % (sel["ap"], sel["max_ap"]), COL["gold"]))
+        if "atk" in sel:
+            if sel.get("rng_atk", 0) > 0:
+                lines.append(("MEL ATK %d | RG ATK %d (RNG %d)" % (sel["atk"], sel["rng_atk"], sel["range"]), COL["text"]))
+            else:
+                lines.append(("ATK %d (melee only)" % sel["atk"], COL["text"]))
+        if sel.get("kind") == "frontman":
+            lines.append(("CLICK FOE: melee / AZRAEL at range", COL["gold"]))
+        if sel.get("team") == 0:
+            if sel.get("atk", 0) > 0:
+                lines.append(("MELEE = 3 AP", COL["green"]))
+            if sel.get("rng_atk", 0) > 0:
+                lines.append(("RANGED = 4 AP (reach %d)" % sel["range"], COL["green"]))
+            lines.append(("MOVE = 1 AP per tile", COL["green"]))
+            if sel.get("kind") == "frontman":
+                if self.level >= 2:
+                    lines.append(("SCREAM = 5 AP", COL["green"]))
+                if self.level >= 4:
+                    lines.append(("BLITZ = 5 AP", COL["green"]))
+        return lines
+
+    def _buttons_y(self, sel):
+        return 20 + len(self._panel_info_lines(sel)) * 22 + 8
+
     def _render_panel(self):
         pygame.draw.rect(self.screen, COL["panel"], (HUD_X - 4, 8, HUD_W + 8, LOG_Y - 16))
         sel = self.selected
         x = HUD_X + 8
         y = 20
-        if sel:
-            name = "UNIT"
-            if "hp" in sel and "team" in sel:
-                name = KINDS.get(sel["kind"], {"name": sel["kind"]})["name"]
-            else:
-                name = BUILD_KINDS.get(sel["kind"], sel["kind"])["name"]
-            self.self_text = name
-            txt = self.font.render(name, True, COL["gold"])
-            self.screen.blit(txt, (x, y))
-            y += 26
-            txt = self.font_sm.render("HP %d/%d" % (sel["hp"], sel["max_hp"]), True, COL["text"])
-            self.screen.blit(txt, (x, y))
+        for txt, col in self._panel_info_lines(sel):
+            st = self.font_sm.render(txt, True, col)
+            self.screen.blit(st, (x, y))
             y += 22
-            if "ap" in sel:
-                txt = self.font_sm.render("AP %d/%d" % (sel["ap"], sel["max_ap"]), True, COL["gold"])
-                self.screen.blit(txt, (x, y))
-                y += 22
-            if "atk" in sel:
-                if sel.get("rng_atk", 0) > 0:
-                    txt = "MEL ATK %d | AZRAEL ATK %d (RNG %d)" % (sel["atk"], sel["rng_atk"], sel["range"])
-                else:
-                    txt = "ATK %d (melee only)" % sel["atk"]
-                st = self.font_sm.render(txt, True, COL["text"])
-                self.screen.blit(st, (x, y))
-                y += 22
-            if sel.get("kind") == "frontman":
-                txt = self.font_sm.render("CLICK FOE: melee up close / AZRAEL at range", True, COL["gold"])
-                self.screen.blit(txt, (x, y))
-                y += 22
-        else:
-            txt = self.font.render("No selection", True, COL["dim"])
-            self.screen.blit(txt, (x, y))
-            y += 26
-        y = BUTTON_Y
+        y = self._buttons_y(sel)
         for label, key in self._buttons():
             rect = self._btn_rect(x, y)
             self._render_button(rect, label)

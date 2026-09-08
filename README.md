@@ -31,8 +31,8 @@ python rts_demo.py
 It's a turn-based stage-defense battler, inspired by Blood Bowl action points + C&C/Advance Wars base building:
 
 - **AP per unit** — move = 1 AP/tile, melee = 3 AP, ranged = 4 AP. Spend each unit, then END TURN; the horde follows the same rules.
-- **Hold the Stage** — the Core must survive 4 waves. Lose the Core, lose the battle.
-- **GRIT economy** — trickle per kill + a wave-clear bonus. Spend it on Watchtowers (45, ~2 turns to build) or Groupies from the Support Van (20, hire with a Van queue).
+- **Hold the Stage** — the Core must survive 4 waves. Lose the Core, lose the battle. You deploy with one **ready Watchtower** and the Support Van.
+- **GRIT economy** — trickle per kill + a wave-clear bonus. Spend it on Watchtowers (45, ~2 turns to build; each **auto-fires at every enemy in its range-4 once per round**) or Groupies from the Support Van (20, hire with a Van queue).
 - **Shared band XP** — every hit, kill, and ability from *any* band member feeds one level pool (unlike WC3, grunts count too). Levels raise the whole team.
 - **Melee vs ranged** — clicks auto-resolve: adjacent targets take the melee attack (3 AP); targets beyond that (up to each unit's reach) get the ranged attack where a unit has one (4 AP). Units specialize — Groupies and the Bass Player are melee bruisers, and the Frontman's ranged hit is Azrael D Destroyer streaking in at range 3. Every skill-up is another way Azrael attacks: **SCREAM** (landing-zone blast) at band level 2, **BLITZ** (double shred at range) at level 4.
 - **Undo** — one-step undo on moves/attacks, plus confirm styling on the action panel.
