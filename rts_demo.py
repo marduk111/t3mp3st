@@ -1170,6 +1170,10 @@ class Demo:
         self._render_topbar()
         self._render_panel()
         self._render_log()
+        if self.state == STATE_PLAY:
+            hint = self.font_sm.render(
+                "ESC pause   R restart   Q retreat   F11 fullscreen", True, COL["dim"])
+            self.screen.blit(hint, (BOARD_X, SCREEN_H - 20))
         if self.banner and self.banner_t > 0:
             self._render_banner()
         if self.overlay == "pause":

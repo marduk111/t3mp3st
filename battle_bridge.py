@@ -156,6 +156,8 @@ class BattleBridge:
 
     def update(self, player_ref):
         self.player_ref = player_ref
+        if self.resolved:
+            return
         self.demo.update(self.demo.clock.tick(rd.FPS) / 1000.0)
         if self.demo.state == rd.STATE_WON and not self.resolved:
             self._apply_win(player_ref)
