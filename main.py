@@ -2681,7 +2681,7 @@ class Game:
             else:
                 self.dialogue.start([
                     "'The stage is up north. Backstage leads deeper in.'",
-                    "'Also, I found the drummer. Or... most of him.'"
+                    "'Also, the drummer's holding it down backstage. Says he'll sit in once the set proves it.'"
 ], "Roadie", (230, 90, 90))
         elif name == "Sketchy Vendor":
             if not self.story_flags.get("vendor_talked"):
@@ -2761,7 +2761,7 @@ class Game:
                 "'The band? Oh man... they're still playing.'",
                 "'The guitarist is headlining the third circle now.'",
                 "'Bass player went full method. Became the monster.'",
-                "'Drummer... well, you know how drummers are.'"
+                "'Drummer's back there, keeping time to the void. He'll find us when it counts.'"
             ], "Roadie", (230, 90, 90))
         elif choice == 2:
             self.player.sanity -= 5
@@ -3172,7 +3172,9 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
+                if event.key == pygame.K_F11:
+                    toggle_fullscreen()
+                elif event.key == pygame.K_ESCAPE:
                     if not game.combat.active and game.state == GameState.PLAYING:
                         game.state = GameState.MENU
                         sound.play_menu_music()

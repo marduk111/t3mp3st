@@ -1007,14 +1007,16 @@ class Demo:
         if self.state in (STATE_WON, STATE_LOST):
             if e.type == pygame.KEYDOWN and e.key == pygame.K_r:
                 self.reset()
+            elif e.type == pygame.KEYDOWN and e.key in (pygame.K_ESCAPE, pygame.K_q):
+                self.state = STATE_DONE
             return
         if self.overlay == "pause":
             if e.type == pygame.KEYDOWN and e.key == pygame.K_ESCAPE:
                 self.overlay = None
             elif e.type == pygame.KEYDOWN and e.key == pygame.K_r:
                 self.reset()
-            elif e.type == pygame.MOUSEBUTTONDOWN:
-                self._panel_click(e.pos)
+            elif e.type == pygame.KEYDOWN and e.key == pygame.K_q:
+                self.state = STATE_DONE
             return
         if e.type == pygame.KEYDOWN:
             if e.key == pygame.K_ESCAPE:
@@ -1080,11 +1082,6 @@ class Demo:
                 self._do_button(key)
                 return
             y += 40
-        if self.overlay == "pause":
-            if self._btn_rect(bx, 330).collidepoint(pos):
-                self.reset()
-            if self._btn_rect(bx, 375).collidepoint(pos):
-                self.state = STATE_DONE
 
     def _do_button(self, key):
         if key == "end":
@@ -1415,11 +1412,10 @@ class Demo:
         overlay.fill((10, 8, 14, 190))
         self.screen.blit(overlay, (0, 0))
         txt = self.font_lg.render("PAUSED", True, COL["gold"])
-        self.screen.blit(txt, ((SCREEN_W - txt.get_width()) // 2, 220))
-        self._render_button(self._btn_rect(HUD_X + 40, 360), "RETRY (R)")
-        self._render_button(self._btn_rect(HUD_X + 40, 420), "QUIT (ESC)")
-        hint = self.font_sm.render("ESC resumes", True, COL["dim"])
-        self.screen.blit(hint, ((SCREEN_W - hint.get_width()) // 2, 500))
+        self.screen.blit(txt, ((SCREEN_W - txt.get_width()) // 2, 210))
+        for i, line in enumerate(["RESUME ......... ESC", "RETRY BATTLE ... R", "ABANDON BATTLE . Q"]):
+            st = self.font.render(line, True, COL["text"])
+            self.screen.blit(st, ((SCREEN_W - st.get_width()) // 2, 300 + i * 34))
 
     def _render_win(self):
         overlay = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)

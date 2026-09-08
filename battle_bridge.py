@@ -142,7 +142,17 @@ class BattleBridge:
         if event.type == pygame.KEYDOWN and event.key == pygame.K_r and self.demo.state != rd.STATE_TITLE:
             self.start(self.enemy, self.player_ref)
             return
+        if (event.type == pygame.KEYDOWN and event.key == pygame.K_q
+                and self.demo.state != rd.STATE_TITLE and not self.resolved):
+            self.retreat()
+            return
         self.demo.handle_event(event)
+
+    def retreat(self):
+        self.demo.log("You abandon the stage. The roadies will remember this.")
+        self.result = "flee"
+        self.resolved = True
+        pygame.mixer.music.stop()
 
     def update(self, player_ref):
         self.player_ref = player_ref
@@ -181,6 +191,10 @@ class BattleBridge:
                 line = sm.render(self.victory_line, True, (255, 200, 120))
                 sub = sm.render("XP +%d   GRIT +25   KILLS +%d   [ENTER]"
                                 % (self.xp_gained, self.kills_on_win), True, (200, 200, 200))
+            elif self.result == "flee":
+                top = big.render("BATTLE ABANDONED", True, (220, 200, 100))
+                line = None
+                sub = sm.render("[ENTER]", True, (200, 200, 200))
             else:
                 top = big.render("THE STAGE FALLS", True, (220, 60, 60))
                 line = None
