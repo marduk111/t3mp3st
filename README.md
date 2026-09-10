@@ -96,7 +96,8 @@ Every character, enemy, and item has a portrait that appears beside dialogue, in
 
 To drop in your real artwork later, save a PNG named after the entity into `assets/portraits/`:
 
-- `player.png` — Belligerent Dickhead (shows on intro cutscene, dialogue, combat)
+- `player.png` — Belligerent Dickhead (shows on dialogue, combat)
+- `azrael.png` — AZRAEL D DESTROYER, the band's cat-god narrator (introduction cutscene) and ranged weapon
 - `zombie.png`, `corpse.png`, `shadow.png`, `demon.png`, `engineer.png`, `beast.png` — enemies
 - `roadie.png`, `last_roadie.png`, `sketchy_vendor.png` — NPCs
 - `beer.png`, `mic.png`, `crypt_key.png`, `broken_bottle.png`, `guitaraxe.png`, `tome_double_down.png`, etc. — items (full list in **ASSET_MANIFEST.md**)
@@ -146,6 +147,8 @@ When you add or remove rooms, NPCs, enemies, or items, the manifest updates auto
 ## Story
 
 The band was mid-set when the floor gave out. Now the singer is in hell, surrounded by demons that look suspiciously like venue staff. The Roadie has intel, the Vendor has gear, the Green Room has secrets, and the Pit Lord has your exit ticket. The only way out is through him. The only way forward is violence and bad decisions.
+
+The story is told to you by **AZRAEL D DESTROYER** — the band's cat-god, the narrator who introduces himself and his abyss in the opening cutscene, the spirit who hints at you when you're stuck, and the blazing ranged weapon that streaks in at range 3 during battles.
 
 ## Adding Your Music
 

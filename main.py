@@ -2117,16 +2117,22 @@ class Game:
         self.state = GameState.CUTSCENE
         sound.play_ambient("intro", force=True)
         self.cutscene.start([
-            "The gig was going great.",
-            "300 sweaty bodies screaming our name.",
-            "Then the floor opened up.",
-            "Now I'm here. Wherever here is.",
-            "The crowd is still screaming.",
-            "But they're not screaming our name anymore.",
-            "They're screaming for help.",
-            "Time to finish the set.",
-        ], bg_color=(5, 0, 0), callback=self.after_intro,
-            portrait="player", label="BELLIGrant DICKHEAD")
+            "They call me AZRAEL D DESTROYER.",
+            "I am the band's spirit. The screaming in the distortion.",
+            "The cat who streaks in from range three and shreds whatever needs shredding.",
+            "And tonight... I am also your narrator.",
+            "Listen closely. The gig was going great.",
+            "Three hundred bodies screaming the singer's name.",
+            "Then the floor opened up like a swallowed pick.",
+            "He fell. Down through the stage, into the abyss.",
+            "This place runs on screams now. His crowd? They're the chorus.",
+            "They're not screaming for an encore anymore. They're screaming for help.",
+            "So here we are, little singer. You, me, and a setlist written in blood.",
+            "Fight to the Pit Lord, end the set, climb out through the trapdoor.",
+            "And if you ever get stuck... ask. I see the whole venue from up here.",
+            "Now go warm up the strings. The encore is going to be loud.",
+        ], bg_color=(16, 4, 12), callback=self.after_intro,
+            portrait="azrael", label="AZRAEL D DESTROYER")
 
     def after_intro(self):
         self.state = GameState.PLAYING
@@ -2161,6 +2167,8 @@ class Game:
                   "| Key | Status | Used as |", "|---|---|---|"]
         rows = {}
         rows["player"] = ("The protagonist (Belligerent Dickhead)", "menu, cutscenes, HUD banners")
+        rows["azrael"] = ("AZRAEL D DESTROYER (narrator, hint-giver, ranged weapon)",
+                          "introduction cutscene, battle appearances")
         for room in self.room_map.values():
             for npc in room.npcs:
                 key = npc["name"].lower().replace(" ", "_")

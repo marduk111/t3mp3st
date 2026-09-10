@@ -12,6 +12,7 @@ Folder: `assets/portraits/`  -  File: `<key>.png` (recommended 160x160).
 
 | Key | Status | Used as |
 |---|---|---|
+| azrael | PLACEHOLDER | introduction cutscene, battle appearances |
 | beast | PLACEHOLDER | Enemy the Pit Lord himself (Boss) - The Pit Lord's Chamber |
 | beer | PLACEHOLDER | Item a warm beer - The Stage of Sin |
 | blood_puddle | PLACEHOLDER | Item a pool of blood - Backstage Gore |
