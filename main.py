@@ -23,8 +23,11 @@ SCREEN_W, SCREEN_H = 1024, 768
 FPS = 30
 TILE = 32
 
+# Debut-album branding (working title from an older repo is retired).
+GAME_TITLE = "THEATRE OF SORROW"
+
 screen = pygame.display.set_mode((SCREEN_W, SCREEN_H))
-pygame.display.set_caption("T3MP3ST - Belligerent Dickhead vs The Beast")
+pygame.display.set_caption(GAME_TITLE + " - Marduk vs The Beast")
 clock = pygame.time.Clock()
 
 fullscreen = False
@@ -1196,7 +1199,7 @@ class Player:
         self.anim_frame = 0
         self.anim_timer = 0
         self.kills = 0
-        self.name = "Belligerent Dickhead"
+        self.name = "Marduk"
 
         # Healing mechanics: "Grit" meter + passive regen
         self.grit = 0
@@ -1384,7 +1387,7 @@ class CombatSystem:
         "shadow": [
             "Stage Ninja: 'Your stage presence... is misplaced. It belongs to me now.'",
             "Stage Ninja: 'In the dark of the wings, I am the only real performer.'",
-            "Stage Ninja: 'I'll open for your funeral, Dickhead.'",
+            "Stage Ninja: 'I'll open for your funeral, Marduk.'",
         ],
         "demon": [
             "Pit Lord's Enforcer: 'The Beast has evolved the setlist. You're opening for oblivion.'",
@@ -1404,12 +1407,12 @@ class CombatSystem:
     }
 
     PLAYER_RETORTS = [
-        "Belligerent Dickhead: 'You should've stayed a one-hit wonder.'",
-        "Belligerent Dickhead: 'My dog plays better than you, and he's a corpse too.'",
-        "Belligerent Dickhead: 'I've headlined worse crowds than hell.'",
-        "Belligerent Dickhead: 'Let me autograph your face. Real close. With my boot.'",
-        "Belligerent Dickhead: 'You're all gimmick, no substance. Extra disembowelment for that.'",
-        "Belligerent Dickhead: 'This is the shortest opening set you've ever done.'",
+        "Marduk: 'You should've stayed a one-hit wonder.'",
+        "Marduk: 'My dog plays better than you, and he's a corpse too.'",
+        "Marduk: 'I've headlined worse crowds than hell.'",
+        "Marduk: 'Let me autograph your face. Real close. With my boot.'",
+        "Marduk: 'You're all gimmick, no substance. Extra disembowelment for that.'",
+        "Marduk: 'This is the shortest opening set you've ever done.'",
     ]
 
     VICTORY_LINES = {
@@ -1835,8 +1838,8 @@ class Game:
 
         room_stage = Room("The Stage of Sin", w, h, stage,
                           ambient_color=(25, 10, 10),
-                          objective="Get your bearings. Grab what's on the floor, talk to the Roadie, then find the exit door.",
-                         objective_portrait="roadie")
+                          objective="AZRAEL: 'Get your bearings. Grab what's on the floor, talk to the Roadie, find the exit door.'",
+                         objective_portrait="azrael")
         room_stage.items = [
             {"x": 2, "y": 8, "type": "beer", "active": True, "interact": "beer"},
             {"x": 17, "y": 12, "type": "microphone", "active": True, "interact": "mic"},
@@ -1862,8 +1865,8 @@ class Game:
         back[12][10] = "door"
 
         room_back = Room("Backstage Gore", w, h, back, ambient_color=(15, 8, 8),
-                         objective="Search the Backstage. Grab the bottle and the drink. That rusted door to the south needs a key.",
-                         objective_portrait="broken_bottle")
+                         objective="AZRAEL: 'Search the Backstage. Bottle and drink first. That south door needs a DO-NOT-USE key.'",
+                         objective_portrait="azrael")
         room_back.enemies = [
             {"x": 10, "y": 5, "type": "corpse", "active": True, "hp": 35,
              "defense": 2, "interact": "corpse_reanimated"},
@@ -1880,7 +1883,7 @@ class Game:
             {"x": 18, "y": 7, "target": "The Merch Table of Madness", "spawn_x": 2, "spawn_y": 7},
             {"x": 10, "y": 12, "target": "The Green Room of Vile", "requires_item": "crypt_key",
              "spawn_x": 8, "spawn_y": 7,
-             "locked_msg": "A heavy rusted door. It's engraved with a keyhole shaped like a certain DO-NOT-USE key..."},
+             "locked_msg": "AZRAEL: 'A heavy rusted door. The lock is shaped for a key that insists it should never be used.'"},
         ]
 
         # Room 3: Merch Table
@@ -1893,8 +1896,8 @@ class Game:
         merch[7][18] = "door"
 
         room_merch = Room("The Merch Table of Madness", w, h, merch, ambient_color=(20, 15, 20),
-                          objective="Talk to the vendor. Stock up. The Mosh Pit awaits beyond the east door.",
-                         objective_portrait="sketchy_vendor")
+                          objective="AZRAEL: 'Talk to the vendor, stock up. Mosh Pit's beyond the east door.'",
+                         objective_portrait="azrael")
         room_merch.enemies = [
             {"x": 10, "y": 7, "type": "demon", "active": True, "hp": 70,
              "defense": 8, "interact": "merch_demon"},
@@ -1925,8 +1928,8 @@ class Game:
         pit[1][7] = "door"
 
         room_pit = Room("The Mosh Pit of Souls", w, h, pit, ambient_color=(30, 0, 0),
-                        objective="Slay the Pit Lord's Enforcer to open the great gate to the east.",
-                        objective_portrait="demon")
+                        objective="AZRAEL: 'Slay the Enforcer to break the chains on the east gate.'",
+                        objective_portrait="azrael")
         room_pit.enemies = [
             {"x": 10, "y": 7, "type": "demon", "active": True, "hp": 120,
              "defense": 10, "interact": "pit_lord", "boss": True},
@@ -1944,7 +1947,7 @@ class Game:
             {"x": 1, "y": 7, "target": "The Merch Table of Madness", "spawn_x": 17, "spawn_y": 7},
             {"x": 12, "y": 7, "target": "The Pit Lord's Chamber", "requires_flag": "pit_lord_defeated",
              "spawn_x": 8, "spawn_y": 7,
-             "locked_msg": "A colossal iron gate. It's fused shut by demonic chains. Only the Enforcer's death will break them."},
+             "locked_msg": "AZRAEL: 'A colossal iron gate, chained shut by the Enforcer's ego. Kill him and the chains pop like a champagne cork.'"},
             {"x": 7, "y": 1, "target": "The Sound Booth of Despair", "spawn_x": 7, "spawn_y": 12},
         ]
 
@@ -1957,8 +1960,8 @@ class Game:
         green[7][18] = "door"
 
         room_green = Room("The Green Room of Vile", w, h, green, ambient_color=(10, 25, 10),
-                          objective="Sneak the VIP lounge. Talk to the Last Roadie. Loot the green room.",
-                          objective_portrait="last_roadie")
+                          objective="AZRAEL: 'VIP lounge. Talk to the Last Roadie. Loot the green room.'",
+                          objective_portrait="azrael")
         room_green.enemies = [
             {"x": 10, "y": 8, "type": "shadow", "active": True, "hp": 60,
              "defense": 7, "interact": "vip_ninja"},
@@ -1991,8 +1994,8 @@ class Game:
         chamber[7][12] = "door"
 
         room_chamber = Room("The Pit Lord's Chamber", w, h, chamber, ambient_color=(40, 0, 0),
-                            objective="The Pit Lord. End the set and escape. He drops no mercy.",
-                            objective_portrait="beast")
+                            objective="AZRAEL: 'The Pit Lord. End the set. Escape. He drops no mercy.'",
+                            objective_portrait="azrael")
         room_chamber.enemies = [
             {"x": 10, "y": 7, "type": "beast", "active": True, "hp": 200,
              "defense": 14, "interact": "the_beast", "boss": True},
@@ -2013,8 +2016,8 @@ class Game:
         booth[5][18] = "door"
 
         room_booth = Room("The Sound Booth of Despair", w, h, booth, ambient_color=(15, 15, 40),
-                          objective="The sound booth. The engineer controls everything. Grab the fader. Grab the tomes. Break the mix.",
-                          objective_portrait="engineer")
+                          objective="AZRAEL: 'The sound booth. Grab the fader, grab the tomes, break the mix.'",
+                          objective_portrait="azrael")
         room_booth.enemies = [
             {"x": 10, "y": 7, "type": "engineer", "active": True, "hp": 70,
              "defense": 7, "interact": "sound_engineer"},
@@ -2064,7 +2067,7 @@ class Game:
             names = ", ".join(SKILLS[s]["name"] for s in self.combat.skills_gained)
             parts.append(f"New ability: {names}!")
             self.tutorial_once("tut_skills",
-                               "TIP: New abilities unlock as your band levels up in battle. Select a band member and use the panel buttons.",
+                               "AZRAEL: 'The band is leveling up. Select a member and use the panel buttons - new noise, new rules.'",
                                frames=300)
         self.objective_banner = "  ".join(parts)
         self.objective_banner_timer = 420
@@ -2087,17 +2090,17 @@ class Game:
             pass
         if p.can_scream() and not self.story_flags.get("tut_scream", False):
             self.tutorial_once("tut_scream",
-                               "TIP: GRIT is FULL! Press F to SCREAM and heal 40 HP (costs 20 sanity).")
+                               "AZRAEL: 'GRIT is FULL, little singer. Press F to SCREAM - heal 40 HP for 20 sanity.'")
         if p.sanity < 30 and not self.story_flags.get("tut_sanity", False):
             self.tutorial_once("tut_sanity",
-                               "TIP: Your sanity is dropping. Low sanity makes the world flicker. Screaming costs sanity.")
+                               "AZRAEL: 'Your sanity is dropping. Low sanity flickers the world. Screaming costs sanity. Choose your noise.'")
         if not self.story_flags.get("tut_mthud", False) and self.player.kills >= 1:
             self.tutorial_once("tut_mthud",
-                               "TIP: Grunt. When you defeat enemies your GRIT fills faster. Save your Scream for when it matters.")
+                               "AZRAEL: 'Defeat enough enemies and GRIT floods in faster. Save your Scream for the encore that matters.'")
 
     def tutorial_combat_start(self):
         self.tutorial_once("tut_combat",
-                           "FIGHT! 1=Attack 2=Taunt (+damage next hit) 3=Flee. Take the pit by storm.",
+                           "AZRAEL: 'The stage darkens. Select a band member with the mouse, move and strike (each action spends AP), end your turn on SPACE. Keep the Core alive!'",
                            frames=360)
 
     def show_room_objective(self):
@@ -2127,7 +2130,7 @@ class Game:
             "He fell. Down through the stage, into the abyss.",
             "This place runs on screams now. His crowd? They're the chorus.",
             "They're not screaming for an encore anymore. They're screaming for help.",
-            "So here we are, little singer. You, me, and a setlist written in blood.",
+            "So here we are, Marduk. You, me, and a setlist written in blood.",
             "Fight to the Pit Lord, end the set, climb out through the trapdoor.",
             "And if you ever get stuck... ask. I see the whole venue from up here.",
             "Now go warm up the strings. The encore is going to be loud.",
@@ -2139,7 +2142,7 @@ class Game:
         self._sync_room_music()
         self.show_room_objective()
         self.tutorial_once("tut_move",
-                           "TO MOVE: WASD or arrow keys. Walk up to things and press SPACE/ENTER to interact.",
+                           "AZRAEL: 'Walk with WASD or the arrows, Marduk. Approach things and press SPACE/ENTER. I can't carry you - but I can point.'",
                            frames=360)
 
     def _sync_room_music(self):
@@ -2151,7 +2154,7 @@ class Game:
     def generate_asset_manifest(self, path=None):
         path = path or os.path.join(ASSETS, "ASSET_MANIFEST.md")
         lines = [
-            "# T3MP3ST - Asset Manifest",
+            "# %s - Asset Manifest" % GAME_TITLE,
             "",
             "Auto-generated by the game every time you start or load a game. You don't edit",
             "this file - drop your own art and music into the folders below using the exact",
@@ -2166,7 +2169,7 @@ class Game:
                   "",
                   "| Key | Status | Used as |", "|---|---|---|"]
         rows = {}
-        rows["player"] = ("The protagonist (Belligerent Dickhead)", "menu, cutscenes, HUD banners")
+        rows["player"] = ("The protagonist (Marduk)", "menu, cutscenes, HUD banners")
         rows["azrael"] = ("AZRAEL D DESTROYER (narrator, hint-giver, ranged weapon)",
                           "introduction cutscene, battle appearances")
         for room in self.room_map.values():
@@ -2191,7 +2194,7 @@ class Game:
                 rows.setdefault(key, (label, where))
         for key, (label, where) in sorted(rows.items()):
             status = "CUSTOM" if os.path.exists(os.path.join(PORTRAITS_DIR, key + ".png")) else "PLACEHOLDER"
-            lines.append(f"| {key} | {status} | {where} |")
+            lines.append(f"| {key} | {status} | {label} - {where} |")
 
         lines += ["", "## Music - key moments", "",
                   "Folder: `assets/music/`.  File: `<slot>.mp3` (or `.ogg` / `.wav`).",
@@ -2234,14 +2237,16 @@ class Game:
         self.state = GameState.CUTSCENE
         sound.play_ambient("ending", force=True)
         self.cutscene.start([
-            "The Pit Lord collapses into the pit he came from.",
-            "The lights come up. The PA crackles to life.",
-            "Somewhere above, the trapdoor grinds open.",
-            "You climb back onto the stage... and it feels real again.",
-            "The crowd is gone. The blood is gone.",
-            "Your guitar is still in tune.",
-            "You step up to the mic and scream the last verse of the set.",
-            "Somewhere in the void below, a demon claps politely.",
+            "AZRAEL: 'The Pit Lord folds into the pit he came from. Kevin. Forever. Kevin.'",
+            "AZRAEL: 'The lights come up. The PA crackles alive - like an old friend.'",
+            "AZRAEL: 'Somewhere above, the trapdoor grinds open.'",
+            "AZRAEL: 'You climb back onto the stage... and it feels real again.'",
+            "AZRAEL: 'The crowd is gone. The blood is gone. His guitar is still in tune.'",
+            "AZRAEL: 'He steps to the mic and screams the last verse of the set.'",
+            "AZRAEL: 'I sat this one out. Some encores belong to the singer alone.'",
+            "MARDUK: '...Azrael?'",
+            "AZRAEL: 'I'll be up there. Shredding. As always.'",
+            "AZRAEL: 'Somewhere in the void below, a demon applauds politely. You love to see it.'",
             "THE END",
             "...FOR NOW",
         ], bg_color=(0, 5, 0), callback=self.after_ending)
@@ -2287,7 +2292,7 @@ class Game:
                 self.save_game()
             elif event.key == pygame.K_h:
                 self.tutorial_once("tut_help",
-                                   "TIP: Press H anytime to reopen this guide (controls + mechanics).")
+                                   "AZRAEL: 'H reopens my FIELD MANUAL anytime - controls and mechanics. Study it. I like a prepared singer.'")
                 self.state = GameState.HELP
             elif event.key == pygame.K_f:
                 self.use_scream()
@@ -2296,22 +2301,23 @@ class Game:
 
     def use_scream(self):
         if not self.player.can_scream():
-            self.dialogue.start(["Your throat isn't ready. Keep fighting to build GRIT.",
-                                 "Scream fills when you land or take hits."],
-                                "Belligerent Dickhead", (240, 130, 90))
+            self.dialogue.start(["AZRAEL: 'Little singer. The scream isn't ready. Keep hitting things.'",
+                                 "AZRAEL: 'Build GRIT - land hits, take hits. Then we roar.'"],
+                                "AZRAEL", (255, 190, 80))
             return
         self.player.spend_grit()
         restored = self.player.scream_heal(40)
         self.player.sanity = max(0, self.player.sanity - 20)
         if restored > 0:
             sound.play_sfx("heal")
-            self.dialogue.start([f"You SCREAM the pain out of your body!",
+            self.dialogue.start(["AZRAEL: 'THERE it is. The scream that moves the air.'",
+                                 "MARDUK: 'AAAAARGH!'",
                                  f"+{restored} HP. Your chords are wrecked... SANITY -20"],
-                                "Belligerent Dickhead", (240, 130, 90))
+                                "AZRAEL", (255, 190, 80))
         else:
-            self.dialogue.start(["You SCREAM, but you're already unharmed.",
-                                 "Waste of a good growl. SANITY -20"],
-                                "Belligerent Dickhead", (240, 130, 90))
+            self.dialogue.start(["AZRAEL: 'A magnificent roar. Shame nothing was bleeding.'",
+                                 "AZRAEL: 'Waste of a good growl. SANITY -20'"],
+                                "AZRAEL", (255, 190, 80))
 
     def nearest_interactable(self):
         RANGE = 5
@@ -2369,12 +2375,12 @@ class Game:
         if kind == "item":
             self.interact_item(target)
             self.tutorial_once("tut_interact",
-                               "You grabbed it! Interact by pressing SPACE when a prompt shows at the bottom.",
+                               "AZRAEL: 'You grabbed it! SPACE when the cue glows. I'd say meow, but the cue works better.'",
                                frames=240)
         elif kind == "npc":
             self.interact_npc(target)
             self.tutorial_once("tut_npc",
-                               "You talked. NPCs give lore, loot, or choices. Pick with UP/DOWN and SPACE.",
+                               "AZRAEL: 'You talked to a soul. Pick with UP/DOWN and SPACE, little singer.'",
                                frames=240)
         elif kind == "enemy":
             self.tutorial_combat_start()
@@ -2382,7 +2388,7 @@ class Game:
         elif kind == "door":
             locked_reason = self.door_locked_reason(target)
             if locked_reason:
-                self.dialogue.start([locked_reason], "Belligerent Dickhead", (240, 130, 90))
+                self.dialogue.start([locked_reason], "AZRAEL", (255, 190, 80))
                 return
             dest = target["target"]
             if dest in self.room_map:
@@ -2400,11 +2406,11 @@ class Game:
         if door.get("requires_flag") and not self.story_flags.get(door["requires_flag"]):
             if door.get("locked_msg"):
                 return door["locked_msg"]
-            return "A heavy gate. It will only open after the Pit Lord's Enforcer is defeated."
+            return "AZRAEL: 'A heavy gate. It opens when the Pit Lord's Enforcer stops existing. Theatrical, I know.'"
         if door.get("requires_item") and door["requires_item"] not in self.player.inventory:
             if door.get("locked_msg"):
                 return door["locked_msg"]
-            return "Locked. It needs a key. A specific, oddly-labeled key."
+            return "AZRAEL: 'Locked. It wants a specific, oddly-labeled key. You know the one.'"
         return None
 
     def handle_combat_input(self, event):
@@ -2437,7 +2443,7 @@ class Game:
         e = self.combat.enemy
         if e and e.get("interact") == "pit_lord":
             self.story_flags["pit_lord_defeated"] = True
-            self.show_help("The Enforcer is down. The great gate to the Pit Lord's Chamber has opened!",
+            self.show_help("AZRAEL: 'Enforcer's headlining the pit now. The gate to the Chamber swings open - chains and all.'",
                            frames=300)
         if e and e.get("interact") == "the_beast":
             sound.jingle("victory")
@@ -2459,10 +2465,11 @@ class Game:
             item["active"] = False
             sound.play_sfx("pickup")
             self.dialogue.start([
-                "You crack open a warm beer. Tastes like backstage.",
-                "It doesn't heal your wounds. But it numbs everything else.",
+                "MARDUK: 'Warm beer. You've got to be kidding me.'",
+                "AZRAEL: 'Down here, warm means ALIVE. Drink it, little singer.'",
+                "AZRAEL: 'It won't close the wounds. It just makes them feel like art.'",
                 "HP +15, SANITY -5"
-            ], "Belligerent Dickhead", (240, 130, 90))
+            ], "AZRAEL", (255, 190, 80))
 
         elif ix == "mic":
             self.player.inventory.append("mic")
@@ -2470,20 +2477,22 @@ class Game:
             item["active"] = False
             sound.play_sfx("pickup")
             self.dialogue.start([
-                "You grab the mic. It's heavy. Real metal.",
-                "The last singer's fingerprints are still on it.",
-                "His fingerprints are also on the walls. Separately.",
+                "AZRAEL: 'A microphone. Heavy. Real metal.'",
+                "AZRAEL: 'The last singer's fingerprints are still melted into the grip.'",
+                "MARDUK: 'And the walls?'",
+                "AZRAEL: 'Separately. Moving on.'",
                 "ATTACK +3"
-            ], "Belligerent Dickhead", (240, 130, 90))
+            ], "AZRAEL", (255, 190, 80))
 
         elif ix == "crypt_key":
             self.player.inventory.append("crypt_key")
             item["active"] = False
             sound.play_sfx("pickup")
             self.dialogue.start([
-                "A key with a tag that says 'DO NOT USE'",
-                "Naturally, you pocket it immediately.",
-            ], "Belligerent Dickhead", (240, 130, 90))
+                "AZRAEL: 'A key with a tag that reads DO NOT USE.'",
+                "MARDUK: '...'",
+                "AZRAEL: 'Yes. Pocket it. I knew we'd get along.'",
+            ], "AZRAEL", (255, 190, 80))
 
         elif ix == "broken_bottle":
             self.player.inventory.append("broken_bottle")
@@ -2491,28 +2500,28 @@ class Game:
             item["active"] = False
             sound.play_sfx("pickup")
             self.dialogue.start([
-                "A broken bottle. The preferred weapon of every",
-                "punk show you've ever played.",
+                "AZRAEL: 'A broken bottle. The signature weapon of every punk show you've ever played.'",
+                "AZRAEL: 'Hold it low, hold it right. It has one good show in it.'",
                 "ATTACK +8"
-            ], "Belligerent Dickhead", (240, 130, 90))
+            ], "AZRAEL", (255, 190, 80))
 
         elif ix == "energy_drink":
             self.player.hp = min(self.player.max_hp, self.player.hp + 25)
             item["active"] = False
             sound.play_sfx("heal")
             self.dialogue.start([
-                "Some kind of energy drink. The label just says 'PAIN'.",
-                "You drink it anyway. It tastes like regret and taurine.",
+                "AZRAEL: 'An energy drink labeled PAIN. It is exactly what it claims.'",
+                "MARDUK: 'Cheers.'",
+                "AZRAEL: 'He drinks it anyway. Of course he does. It tastes like regret and taurine.'",
                 "HP +25"
-            ], "Belligerent Dickhead", (240, 130, 90))
+            ], "AZRAEL", (255, 190, 80))
 
         elif ix == "blood_puddle":
             self.dialogue.start([
-                "A puddle of blood. You're not sure whose.",
-                "At a metal show, it could be anyone's.",
-                "You dip your fingers in it. Feels... warm.",
-                "You write 'BD' on the wall. Branding."
-            ], "Belligerent Dickhead", (240, 130, 90))
+                "AZRAEL: 'A puddle of blood. Whose? At a metal show - everyone's.'",
+                "MARDUK: 'M. For the wall. Branding.'",
+                "AZRAEL: 'He writes his initial in someone else's blood. Stay metal, my friend.'",
+            ], "AZRAEL", (255, 190, 80))
 
         elif ix == "mysterious_lager":
             self.player.hp = min(self.player.max_hp, self.player.hp + 10)
@@ -2521,20 +2530,21 @@ class Game:
             item["active"] = False
             sound.play_sfx("pickup")
             self.dialogue.start([
-                "The label is in a language you don't recognize.",
-                "It tastes like lightning and poor decisions.",
+                "AZRAEL: 'The label is in a language even I don't purr in.'",
+                "MARDUK: 'Tastes like lightning and poor decisions.'",
+                "AZRAEL: 'He's not wrong.'",
                 "HP +10, ATTACK +5, SANITY -10"
-            ], "Belligerent Dickhead", (240, 130, 90))
+            ], "AZRAEL", (255, 190, 80))
 
         elif ix == "merch_bloody_rag":
             self.player.hp = min(self.player.max_hp, self.player.hp + 20)
             item["active"] = False
             sound.play_sfx("heal")
             self.dialogue.start([
-                "It's a rag. It's bloody. You use it as a bandage.",
-                "Hygiene left the building several lifetimes ago.",
+                "AZRAEL: 'A rag. Bloody. Medicinal. Go on.'",
+                "AZRAEL: 'Hygiene left the building several lifetimes ago.'",
                 "HP +20"
-            ], "Belligerent Dickhead", (240, 130, 90))
+            ], "AZRAEL", (255, 190, 80))
 
         elif ix == "guitaraxe":
             self.player.inventory.append("guitaraxe")
@@ -2542,11 +2552,12 @@ class Game:
             item["active"] = False
             sound.play_sfx("pickup")
             self.dialogue.start([
-                "A guitar shaped like an axe. Because of course it is.",
-                "It's tuned to Drop Z. The strings hum with malice.",
-                "This is the most metal thing you've ever held.",
+                "AZRAEL: 'A guitar shaped like an axe. The universe finally stops teasing.'",
+                "AZRAEL: 'Tuned to Drop Z. The strings hum with malice.'",
+                "MARDUK: 'The most metal thing I've ever held.'",
+                "AZRAEL: 'You say that now, little singer.'",
                 "ATTACK +15"
-            ], "Belligerent Dickhead", (240, 130, 90))
+            ], "AZRAEL", (255, 190, 80))
 
         elif ix == "mixer_fader":
             self.player.inventory.append("mixer_fader")
@@ -2554,11 +2565,12 @@ class Game:
             item["active"] = False
             sound.play_sfx("pickup")
             self.dialogue.start([
-                "The master fader from the sound board. It's been ripped clean off.",
-                "Heavy steel, sharp edge, and a label that reads 'MASTER'.",
-                "You swing it once. The room feedback peaks. Perfect.",
+                "AZRAEL: 'The master fader, ripped clean from the sound board.'",
+                "AZRAEL: 'Steel. Sharp. The label reads MASTER.'",
+                "MARDUK: 'The first swing felt like a chord change.'",
+                "AZRAEL: 'The feedback peaks. Perfect.'",
                 "ATTACK +12"
-            ], "Belligerent Dickhead", (240, 130, 90))
+            ], "AZRAEL", (255, 190, 80))
 
         elif ix == "pit_mystery_vial":
             self.player.hp = self.player.max_hp
@@ -2566,11 +2578,13 @@ class Game:
             item["active"] = False
             sound.play_sfx("heal")
             self.dialogue.start([
-                "You don't know what this is. You drink it anyway.",
-                "Your wounds close. Your vision goes red. Then purple.",
-                "Everything tastes like copper. You feel... complete.",
+                "AZRAEL: 'A vial of unknown fluid. Do not - he's drinking it.'",
+                "MARDUK: 'Nghhh.'",
+                "AZRAEL: 'Wounds close. Vision goes red, then purple.'",
+                "MARDUK: 'Tastes like copper.'",
+                "AZRAEL: 'He feels... complete. Terrifying.'",
                 "FULL HP RESTORED, SANITY -20"
-            ], "Belligerent Dickhead", (240, 130, 90))
+            ], "AZRAEL", (255, 190, 80))
 
         elif ix == "vip_broken_lamp":
             self.player.inventory.append("vip_lamp")
@@ -2578,31 +2592,32 @@ class Game:
             item["active"] = False
             sound.play_sfx("pickup")
             self.dialogue.start([
-                "A stage lamp cracked off its rig.",
-                "Glass, tungsten, and the souls of a thousand burned-out bulbs.",
-                "You swing it once. The hum it makes sounds like feedback.",
+                "AZRAEL: 'A stage lamp cracked off its rig.'",
+                "AZRAEL: 'Glass. Tungsten. The souls of a thousand burned-out bulbs.'",
+                "MARDUK: 'It hums like feedback.'",
+                "AZRAEL: 'Perfect.'",
                 "ATTACK +10"
-            ], "Belligerent Dickhead", (240, 130, 90))
+            ], "AZRAEL", (255, 190, 80))
 
         elif ix == "vip_energy_drink":
             self.player.hp = min(self.player.max_hp, self.player.hp + 30)
             item["active"] = False
             sound.play_sfx("heal")
             self.dialogue.start([
-                "A green-room energy drink. It's unlabeled, duct-taped shut.",
-                "The VIP rider is VOMIT, and somebody honored it literally.",
-                "Whatever was left in the can tastes like the encore.",
+                "AZRAEL: 'Unlabeled. Duct-taped shut. The VIP rider said VOMIT - somebody honored it literally.'",
+                "MARDUK: 'Whatever. It tastes like the encore.'",
+                "AZRAEL: 'The encore is 30 hit points, apparently.'",
                 "HP +30"
-            ], "Belligerent Dickhead", (240, 130, 90))
+            ], "AZRAEL", (255, 190, 80))
 
         elif ix == "vip_blood":
             self.player.sanity = max(0, self.player.sanity - 8)
             self.dialogue.start([
-                "A slick of blood on the green-room couch.",
-                "Someone bled here. Someone famous, probably.",
-                "You leave a handprint on the wall and keep going.",
+                "AZRAEL: 'Blood on the green-room couch. Someone famous, probably.'",
+                "MARDUK: 'Handprint. For the wall.'",
+                "AZRAEL: 'He leaves a mark and keeps walking. On brand.'",
                 "SANITY -8"
-            ], "Belligerent Dickhead", (240, 130, 90))
+            ], "AZRAEL", (255, 190, 80))
 
         elif ix == "chamber_vial":
             self.player.hp = self.player.max_hp
@@ -2610,11 +2625,11 @@ class Game:
             item["active"] = False
             sound.play_sfx("heal")
             self.dialogue.start([
-                "A vial of Pit Lord blood. It glows faintly crimson.",
-                "You down it. It tastes like a headline slot.",
-                "Your mind clears. Your body screams 'MORE'.",
+                "AZRAEL: 'Pit Lord blood. It glows faintly crimson.'",
+                "MARDUK: 'To the headline slot.'",
+                "AZRAEL: 'Mind clears. Body screams MORE.'",
                 "FULL HP RESTORED, SANITY +15"
-            ], "Belligerent Dickhead", (240, 130, 90))
+            ], "AZRAEL", (255, 190, 80))
 
         elif ix == "tome_power_chord":
             item["active"] = False
@@ -2622,16 +2637,16 @@ class Game:
             if self.player.unlock_skill("power_chord"):
                 sound.jingle("discovery")
                 self.dialogue.start([
-                    "A torn setlist scrawled in crayon. The riffs are written in blood.",
-                    "You study it. The first note splits the air.",
+                    "AZRAEL: 'A torn setlist scrawled in crayon. The riffs are written in blood.'",
+                    "AZRAEL: 'Study it, Marduk. The first note splits the air.'",
                     "New ability unlocked: POWER CHORD (1.6x damage, costs 30 GRIT)"
-                ], "Belligerent Dickhead", (240, 130, 90))
+                ], "AZRAEL", (255, 190, 80))
                 self.tutorial_once("tut_skills",
-                                   "TIP: New abilities unlock as your band levels up in battle. Select a band member and use the panel buttons.")
+                                   "AZRAEL: 'The band is leveling up. Select a member and use the panel buttons - new noise, new rules.'")
             else:
                 self.dialogue.start([
-                    "You already know this riff. The setlist crumbles."
-                ], "Belligerent Dickhead", (240, 130, 90))
+                    "AZRAEL: 'You know this riff already. The setlist crumbles to ash.'"
+                ], "AZRAEL", (255, 190, 80))
 
         elif ix == "tome_double_down":
             item["active"] = False
@@ -2639,16 +2654,16 @@ class Game:
             if self.player.unlock_skill("double_down"):
                 sound.jingle("discovery")
                 self.dialogue.start([
-                    "A cursed vinyl etched with anger. Every groove is a scream.",
-                    "You listen until the anger becomes yours.",
+                    "AZRAEL: 'A cursed vinyl etched with anger. Every groove is a scream.'",
+                    "AZRAEL: 'He listens until the anger becomes his. That's the deal.'",
                     "New ability unlocked: DOUBLE DOWN (2.0x damage, costs 12 SANITY)"
-                ], "Belligerent Dickhead", (240, 130, 90))
+                ], "AZRAEL", (255, 190, 80))
                 self.tutorial_once("tut_skills",
-                                   "TIP: New abilities unlock as your band levels up in battle. Select a band member and use the panel buttons.")
+                                   "AZRAEL: 'The band is leveling up. Select a member and use the panel buttons - new noise, new rules.'")
             else:
                 self.dialogue.start([
-                    "You've already internalized this one. The vinyl melts."
-                ], "Belligerent Dickhead", (240, 130, 90))
+                    "AZRAEL: 'Already internalized. The vinyl melts from sheer recognition.'"
+                ], "AZRAEL", (255, 190, 80))
 
         elif ix == "tome_feedback_howl":
             item["active"] = False
@@ -2656,29 +2671,31 @@ class Game:
             if self.player.unlock_skill("feedback_howl"):
                 sound.jingle("discovery")
                 self.dialogue.start([
-                    "A rusted pedal marked 'DO NOT STEP'. You step on it.",
-                    "The feedback howl lives inside the casing now. And inside you.",
+                    "AZRAEL: 'A rusted pedal marked DO NOT STEP.'",
+                    "MARDUK: 'I'm stepping on it.'",
+                    "AZRAEL: 'Of course you are.'",
                     "New ability unlocked: FEEDBACK HOWL (2.5x damage, costs 55 GRIT)"
-                ], "Belligerent Dickhead", (240, 130, 90))
+                ], "AZRAEL", (255, 190, 80))
                 self.tutorial_once("tut_skills",
-                                   "TIP: New abilities unlock as your band levels up in battle. Select a band member and use the panel buttons.")
+                                   "AZRAEL: 'The band is leveling up. Select a member and use the panel buttons - new noise, new rules.'")
             else:
                 self.dialogue.start([
-                    "The pedal screams, but you've heard this song before."
-                ], "Belligerent Dickhead", (240, 130, 90))
+                    "AZRAEL: 'The pedal screams the old song. You've got this one.'"
+                ], "AZRAEL", (255, 190, 80))
 
         elif ix == "booth_earplugs":
             self.player.sanity = min(100, self.player.sanity + 15)
             item["active"] = False
             sound.play_sfx("heal")
             self.dialogue.start([
-                "A pair of sound-dampening earplugs. Label reads 'FOR INTERNAL USE ONLY'.",
-                "You pop them in. The screaming fades to a manageable roar.",
+                "AZRAEL: 'Earplugs. Label reads FOR INTERNAL USE ONLY.'",
+                "MARDUK: '...'",
+                "AZRAEL: 'He's wearing them. I've never been prouder of a human.'",
                 "SANITY +15"
-            ], "Belligerent Dickhead", (240, 130, 90))
+            ], "AZRAEL", (255, 190, 80))
 
         else:
-            self.dialogue.start(["Nothing useful here."])
+            self.dialogue.start(["AZRAEL: 'Nothing useful here, little singer. Keep moving.'"])
         self.dialogue.set_default_portrait(None)
 
     def interact_npc(self, npc):
@@ -2688,11 +2705,12 @@ class Game:
                 self.story_flags["roadie_talked"] = True
                 self.dialogue.start_choice(
                     "Roadie",
-                    "'Bro. The acoustics down here are UNREAL. But also everything is trying to kill us. The vendor through backstage... he's got the good stuff. And the bad stuff. And the stuff that makes you see God.'",
+                    "AZRAEL: 'A survivor. The roadie lives - small miracles. Listen.' ROADIE: 'Bro. The acoustics down here are UNREAL. But also everything is trying to kill us. The vendor through backstage... he's got the good stuff. And the bad stuff. And the stuff that makes you see God.'",
                     ["'Where's the exit?'", "'What happened to the band?'", "'You got any gear?'"],
                     self._roadie_choice, (230, 90, 90))
             else:
                 self.dialogue.start([
+                    "AZRAEL: 'The roadie again. His lines never change. Reliability.'",
                     "'The stage is up north. Backstage leads deeper in.'",
                     "'Also, the drummer's holding it down backstage. Says he'll sit in once the set proves it.'"
 ], "Roadie", (230, 90, 90))
@@ -2701,14 +2719,14 @@ class Game:
                 self.story_flags["vendor_talked"] = True
                 self.dialogue.start_choice(
                     "Sketchy Vendor",
-                    "'Welcome to the merch table! We got shirts, patches, and things that were alive ten minutes ago! What can I do for ya?'",
+                    "AZRAEL: 'A vendor in hell. Cursed, probably. Worth the conversation.' VENDOR: 'Welcome to the merch table! We got shirts, patches, and things that were alive ten minutes ago! What can I do for ya?'",
                     ["'What are you selling?'", "'Are you human?'", "'Weirdest item.'"],
                     self._vendor_choice, (215, 95, 215))
             else:
                 grit = int(self.player.grit)
                 self.dialogue.start_choice(
                     "Sketchy Vendor",
-                    f"'Back so soon? You have {grit} GRIT. That's currency down here. Spend it or keep screaming.' Pick an upgrade:",
+                    f"AZRAEL: 'Commerce waits for no cat.' VENDOR: 'Back so soon? You have {grit} GRIT. That's currency down here. Spend it or keep screaming.' Pick an upgrade:",
                     ["Max HP +10 (25 GRIT)", "Attack +3 (30 GRIT)", "Defense +1 (20 GRIT)", "Not today. I'm saving it."],
                     self._vendor_upgrade_choice, (215, 95, 215))
 
@@ -2717,6 +2735,7 @@ class Game:
                 self.story_flags["last_roadie_talked"] = True
                 self.player.hp = min(self.player.max_hp, self.player.hp + 20)
                 self.dialogue.start([
+                    "AZRAEL: 'A VIP lounge. The last honest roadie in the abyss.'",
                     "'Hey. You made it to the VIP room. Real ones come here.'",
                     "'The Pit Lord's real name is Kevin. He's insecure about it.'",
                     "'Hit him in the ego. That's the only weak spot he's got.'",
@@ -2725,6 +2744,7 @@ class Game:
                 ], "Last Roadie", (110, 230, 110))
             else:
                 self.dialogue.start([
+                    "AZRAEL: 'More intel on Kevin. It never stops being funny.'",
                     "'Kevin's got horns, big teeth, and a terrible sense of humor.'",
                     "'Knock him into the pit. That's how you close a set.'"
                 ], "Last Roadie", (110, 230, 110))
@@ -2733,13 +2753,14 @@ class Game:
         costs = [25, 30, 20]
         if choice == 3:
             self.dialogue.start([
+                "AZRAEL: 'Keeping the grit. A disciplined little singer.'",
                 "'Smart. Hoard your grit. When the moment comes, spend it on something that hurts.'"
             ], "Sketchy Vendor", (215, 95, 215))
             return
         cost = costs[choice]
         if self.player.grit < cost:
             self.dialogue.start([
-                f"'That's {cost} GRIT. You've got {int(self.player.grit)}. Go mosh, then come back.'"
+                f"AZRAEL: 'Not enough GRIT. Busy mosh, then spend.' VENDOR: 'That's {cost} GRIT. You've got {int(self.player.grit)}. Go mosh, then come back.'"
             ], "Sketchy Vendor", (215, 95, 215))
             return
         self.player.grit -= cost
@@ -2754,23 +2775,26 @@ class Game:
             self.player.defense += 1
             stat = "Defense +1"
         self.dialogue.start([
+            "AZRAEL: 'He twists something under the table. Some deals write themselves.'",
             f"'Deal.' He twists something under the table. You feel {stat}.",
             "Your bones rattle in a way that suggests improvement.",
             f"{stat}. Spend wisely, or scream harder."
         ], "Sketchy Vendor", (215, 95, 215))
         self.tutorial_once("tut_vendor_upgrade",
-                           "TIP: The vendor upgrades your body for GRIT. GRIT fills as you fight. Keep some for the Scream.",
+                           "AZRAEL: 'The vendor upgrades bodies for GRIT. GRIT fills as you fight - budget for the Scream.'",
                            frames=300)
 
     def _roadie_choice(self, choice):
         if choice == 0:
             self.dialogue.start([
+                "AZRAEL: 'The exit. He asked. Let him dream.'",
                 "'Exit? EXIT? Brother, the only exit is through the Pit.'",
                 "'The Pit Lord guards the way out. Big fella. Red. Likes to talk.'",
                 "'Pro tip: don't let him talk. He's very persuasive.'"
             ], "Roadie", (230, 90, 90))
         elif choice == 1:
             self.dialogue.start([
+                "AZRAEL: 'The story of the band. I could tell it better - but hear the roadie.'",
                 "'The band? Oh man... they're still playing.'",
                 "'The guitarist is headlining the third circle now.'",
                 "'Bass player went full method. Became the monster.'",
@@ -2779,6 +2803,7 @@ class Game:
         elif choice == 2:
             self.player.sanity -= 5
             self.dialogue.start([
+                "AZRAEL: 'Marduk asks a roadie for gear at the gates of hell. Priorities.'",
                 "'Take this.' He hands you a pair of earplugs.",
                 "'Won't stop the demons. But it'll muffle their screaming.'",
                 "SANITY -5"
@@ -2787,12 +2812,14 @@ class Game:
     def _vendor_choice(self, choice):
         if choice == 0:
             self.dialogue.start([
+                "AZRAEL: 'Merch. In hell. Of course.'",
                 "'We got the usual: suffering, existential dread, regret.'",
                 "'Oh, and t-shirts. The shirts are made of... let's call it leather.'",
                 "'Don't ask what kind of leather.'"
             ], "Sketchy Vendor", (215, 95, 215))
         elif choice == 1:
             self.dialogue.start([
+                "AZRAEL: 'He asks the demon if it is human. Bold. I respect the audacity.'",
                 "'Human? Friend, nobody down here is human anymore.'",
                 "'I used to sell bootleg CDs in a parking lot.'",
                 "'Now I sell bootleg CDs in hell. Same job, different tax bracket.'"
@@ -2801,6 +2828,7 @@ class Game:
             self.player.sanity -= 10
             self.player.attack += 5
             self.dialogue.start([
+                "AZRAEL: 'Weirdest item. Oh, this is going to be good.'",
                 "'Ah, a connoisseur!' He reaches under the table.",
                 "'This baby is a cursed vinyl. Every scratch screams.'",
                 "'You can use it as a weapon. The music never stops.'",
@@ -2939,12 +2967,14 @@ class Game:
             sz = 1 + int(abs(math.sin(t + i)) * 2)
             pygame.draw.circle(screen, (150 + int(50 * math.sin(t + i)), 0, 0), (sx, sy), sz)
 
-        title = fonts.render_title("T3MP3ST", (200, 0, 0))
+        title = fonts.render_title(GAME_TITLE, (200, 0, 0))
         screen.blit(title, (SCREEN_W // 2 - title.get_width() // 2, 80))
-        band = fonts.render_band("BELLIGrant DICKHEAD", (200, 50, 50))
+        band = fonts.render_band("BELLIGERENT DICKHEAD", (200, 50, 50))
         screen.blit(band, (SCREEN_W // 2 - band.get_width() // 2, 160))
-        sub = fonts.render_small("presents: A Descent Into Madness", (120, 40, 40))
+        sub = fonts.render_small("present the debut album - LIVE from the abyss", (120, 40, 40))
         screen.blit(sub, (SCREEN_W // 2 - sub.get_width() // 2, 210))
+        sub2 = fonts.render_small("narrated by AZRAEL D DESTROYER", (120, 70, 50))
+        screen.blit(sub2, (SCREEN_W // 2 - sub2.get_width() // 2, 226))
 
         options = ["New Game", "Load Game", "Credits", "Quit"]
         for i, opt in enumerate(options):
@@ -3117,8 +3147,8 @@ class Game:
 
     def render_help(self):
         screen.fill((12, 8, 8))
-        screen.blit(fonts.render("HELP", (240, 130, 90), big=True),
-                    (SCREEN_W // 2 - fonts.render("HELP", (240, 130, 90), big=True).get_width() // 2, 22))
+        hl = fonts.render("AZRAEL D DESTROYER'S FIELD MANUAL", (240, 130, 90), big=True)
+        screen.blit(hl, (SCREEN_W // 2 - hl.get_width() // 2, 22))
 
         def title(txt):
             screen.blit(fonts.render_small(txt, (160, 140, 190)), (28, y[0]))
@@ -3199,12 +3229,14 @@ class Game:
 
     def render_credits(self):
         screen.fill((5, 0, 0))
-        lines = [("T3MP3ST", fonts.render_title, (200, 0, 0)),
+        lines = [(GAME_TITLE, fonts.render_title, (200, 0, 0)),
                  ("", None, None),
-                 ("A BELLIGrant DICKHEAD Production", fonts.render_band, (200, 50, 50)),
+                 ("A BELLIGERENT DICKHEAD Production", fonts.render_band, (200, 50, 50)),
                  ("", None, None),
-                 ("Music: Belligerent Dickhead", fonts.render, (150, 100, 100)),
-                 ("Concept: Belligerent Dickhead", fonts.render, (150, 100, 100)),
+                 ("Featured Singer: Marduk", fonts.render, (150, 100, 100)),
+                 ("Music: Marduk", fonts.render, (150, 100, 100)),
+                 ("Concept: Marduk", fonts.render, (150, 100, 100)),
+                 ("Narration: AZRAEL D DESTROYER", fonts.render, (150, 100, 100)),
                  ("Code: Assisted by AI", fonts.render, (150, 100, 100)),
                  ("Suffering: Everyone", fonts.render, (150, 100, 100)),
                  ("", None, None),

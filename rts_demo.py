@@ -292,7 +292,7 @@ def get_sprite(kind, variant=0):
 
 
 KINDS = {
-    "frontman": {"name": "Belligerent Dickhead", "hp": 100, "atk": 11, "rng_atk": 11, "ap": 6, "range": 3, "team": 0},
+    "frontman": {"name": "Marduk", "hp": 100, "atk": 11, "rng_atk": 11, "ap": 6, "range": 3, "team": 0},
     "groupie": {"name": "Groupie", "hp": 42, "atk": 5, "rng_atk": 0, "ap": 5, "range": 0, "team": 0},
     "bass": {"name": "Bass Player", "hp": 92, "atk": 10, "rng_atk": 0, "ap": 5, "range": 0, "team": 0},
     "fan": {"name": "Zombie Fan", "hp": 46, "atk": 6, "rng_atk": 0, "ap": 5, "range": 0, "team": 1},
@@ -323,7 +323,7 @@ START_GRIT = 60
 START_XP = 0
 
 TITLE_LINES = [
-    "T3MP3ST // STAGE FRIGHT",
+    "THEATRE OF SORROW // STAGE FRIGHT",
     "",
     "a turn-based stage-defense tactics demo",
     "",
@@ -1450,7 +1450,7 @@ def main():
     except Exception:
         pass
     screen = pygame.display.set_mode((SCREEN_W, SCREEN_H))
-    pygame.display.set_caption("T3MP3ST // STAGE FRIGHT")
+    pygame.display.set_caption("THEATRE OF SORROW // STAGE FRIGHT")
     demo = Demo(screen)
     fullscreen = False
     fullscreen_surf = None

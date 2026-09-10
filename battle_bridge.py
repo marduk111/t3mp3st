@@ -41,18 +41,27 @@ BANTER = {
 }
 
 RETORT = [
-    "Belligerent Dickhead: 'You should've stayed a one-hit wonder.'",
-    "Belligerent Dickhead: 'My dog plays better than you, and he's a corpse too.'",
-    "Belligerent Dickhead: 'Let me autograph your face. Real close. With my boot.'",
+    "Marduk: 'You should've stayed a one-hit wonder.'",
+    "Marduk: 'My dog plays better than you, and he's a corpse too.'",
+    "Marduk: 'Let me autograph your face. Real close. With my boot.'",
+    "AZRAEL: 'Careful, little singer. You're about to make him feel something.'",
+    "AZRAEL: 'That's my boy. Wrong, but passionate.'",
+    "AZRAEL: 'I'd narrate his funeral, but I'm saving the good lines for the Pit Lord.'",
 ]
 
 VICTORY_LINES = {
-    "zombie": ["That's a review you won't recover from.", "Rest in pieces, groupie."],
-    "corpse": ["Next time, keep the monitors level with the living.", "Load-out's over, buddy."],
-    "shadow": ["Looks like the lights found you after all.", "Nope, still the loudest thing here."],
-    "demon": ["Your breakdown was mid. Mine's a knockout.", "Tell the Beast I want my own merch table."],
-    "engineer": ["Check the meters now. Flatlining.", "Rest of the board and board of rest."],
-    "beast": ["The noise won. Souls stay. Set's over.", "I'll handle the encore. You handle the pit."],
+    "zombie": ["That's a review you won't recover from.", "Rest in pieces, groupie.",
+               "AZRAEL: 'Groupie down. The venue's cleaner already.'"],
+    "corpse": ["Next time, keep the monitors level with the living.", "Load-out's over, buddy.",
+               "AZRAEL: 'Monitors fixed. Permanently.'"],
+    "shadow": ["Looks like the lights found you after all.", "Nope, still the loudest thing here.",
+               "AZRAEL: 'The spotlight belongs to us now.'"],
+    "demon": ["Your breakdown was mid. Mine's a knockout.", "Tell the Beast I want my own merch table.",
+              "AZRAEL: 'The Beast's opener just got replaced. Leave the flyers.'"],
+    "engineer": ["Check the meters now. Flatlining.", "Rest of the board and board of rest.",
+                 "AZRAEL: 'I'd remix his screams, but the levels are finally right.'"],
+    "beast": ["The noise won. Souls stay. Set's over.", "I'll handle the encore. You handle the pit.",
+              "AZRAEL: 'Headline slot secured. I'll take the merch cut.'"],
 }
 
 
@@ -129,11 +138,11 @@ class BattleBridge:
         boss["atk"] = 8 + enemy.get("defense", 5)
         if enemy.get("type") == "beast":
             boss["name"] = "THE PIT LORD"
-            self.demo.log("THE PIT LORD descends on the stage.")
+            self.demo.log("AZRAEL: 'The headliner descends. Don't get a review written in your ribs, Marduk.'")
             self.demo.banner = "THE PIT LORD"
         else:
             boss["name"] = "PIT LORD'S ENFORCER"
-            self.demo.log("PIT LORD'S ENFORCER descends on the stage.")
+            self.demo.log("AZRAEL: 'Enforcer incoming. He's the warm-up act. You're the encore.'")
             self.demo.banner = "PIT LORD'S ENFORCER"
         self.demo.banner_t = 3.0
         self.demo.music.combat_loop(4, boss=True)
@@ -149,7 +158,7 @@ class BattleBridge:
         self.demo.handle_event(event)
 
     def retreat(self):
-        self.demo.log("You abandon the stage. The roadies will remember this.")
+        self.demo.log("AZRAEL: 'And so the singer leaves the stage today. A cliffhanger the roadies will gossip about for decades.'")
         self.result = "flee"
         self.resolved = True
         pygame.mixer.music.stop()

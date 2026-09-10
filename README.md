@@ -1,14 +1,14 @@
-# T3MP3ST - Belligerent Dickhead vs The Beast
+# THEATRE OF SORROW - Marduk vs The Beast
 
-A horror RPG where the singer of Belligerent Dickhead falls through the floor during a gig and must fight through hell to finish the set.
+The debut-album-as-a-game from the band Belligerent Dickhead: a horror RPG where their singer, Marduk, falls through the floor during a gig and must fight through hell to finish the set.
 
 ## Try the Beta (Testers)
 
 Clone it, install one package, run:
 
 ```
-git clone https://github.com/marduk111/t3mp3st.git
-cd t3mp3st
+git clone https://github.com/marduk111/theatre-of-sorrow.git
+cd theatre-of-sorrow
 python -m pip install -r requirements.txt
 python main.py
 ```
@@ -96,7 +96,7 @@ Every character, enemy, and item has a portrait that appears beside dialogue, in
 
 To drop in your real artwork later, save a PNG named after the entity into `assets/portraits/`:
 
-- `player.png` — Belligerent Dickhead (shows on dialogue, combat)
+- `player.png` — Marduk, the band's singer (shows on dialogue, combat)
 - `azrael.png` — AZRAEL D DESTROYER, the band's cat-god narrator (introduction cutscene) and ranged weapon
 - `zombie.png`, `corpse.png`, `shadow.png`, `demon.png`, `engineer.png`, `beast.png` — enemies
 - `roadie.png`, `last_roadie.png`, `sketchy_vendor.png` — NPCs
@@ -130,7 +130,7 @@ When you add or remove rooms, NPCs, enemies, or items, the manifest updates auto
 
 ## Combat Flavor
 
-- **Pre-battle banter** — each fight opens with a trash-talking exchange between the enemy and Belligerent Dickhead. Lines are per enemy type.
+- **Pre-battle banter** — each fight opens with a trash-talking exchange: the enemy opens, Marduk retorts, and Azrael D Destroyer adds his commentary from the wings. Lines are per enemy type.
 - **Victory one-liners** — every win earns an action-hero style quip, shown on the victory screen.
 - **Boss fights** — the Pit Lord's Enforcer (Mosh Pit) and the Pit Lord himself (Chamber) are **single-enemy battles** in the same stage-defense engine, scaled to a one-versus-you duel with their own name, banter, and victory lines. Beat the Beast and the ending cutscene plays.
 
