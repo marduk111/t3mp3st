@@ -45,7 +45,7 @@ It's a turn-based stage-defense battler, inspired by Blood Bowl action points + 
 - **Shared band XP** — every hit, kill, and kill from *any* band member feeds one level pool (unlike WC3, grunts count too). Needs **30 + (level−1)×26** per level; every level-up heals and toughens the whole team.
 - **Melee vs ranged** — clicks auto-resolve: adjacent targets take the melee attack (3 AP); targets beyond that (up to each unit's reach) get the ranged attack where a unit has one (4 AP). Units specialize — Groupies are melee bruisers, while the Frontman hits hard up close and, at range, summons **Azrael D Destroyer** streaking in at range 3. Every band level-up is another way Azrael attacks: **SCREAM** (landing-zone blast, 5 AP) at band level 2, **BLITZ** (double shred at range, 5 AP) at level 4.
 - **Undo** — one-step undo on moves/attacks, plus confirm styling on the action panel.
-- **Music** — scans `assets/music/` for `combat1.mp3`, `combat2.mp3`, ... and `boss1.mp3`, ... and rotates through them so every battle sounds different (falls back to silence gracefully).
+- **Music** — scans `assets/music/` for `combat1.mp3`, `combat2.mp3`, ... and `boss1.mp3`, ... and rotates through them so every battle sounds different. Missing files fall back to a built-in procedural riff (battles) or a low room drone (exploration) — never silence.
 - **Retry** — R restarts the battle on a freshly randomized board (different obstacles each run).
 - **Retreat** — Q abandons the battle and puts you back in the room (side-effects like core loss or rewards are skipped).
 
@@ -154,7 +154,7 @@ The story is told to you by **AZRAEL D DESTROYER** — the band's cat-god, the n
 
 ## Adding Your Music
 
-There's a **live asset manifest** that tells you exactly what to drop where. Launch the game once and check **`ASSET_MANIFEST.md`** in the project folder — it is regenerated on every start/load and lists every portrait and music slot with live status (`missing` / `found`).
+There's a **live asset manifest** that tells you exactly what to drop where. Launch the game once and check **`ASSET_MANIFEST.md`** in the project folder — it is regenerated on every start/load and lists every portrait, music slot, and animation clip with live status (`missing` / `found`).
 
 Music is **moment-based**: each game event looks for a file named after that event's slot in `assets/music/`. Drop `<slot>.mp3` (or `.ogg` / `.wav`) and it plays at that exact moment. Numbered names also work: `01-stage.mp3` = `stage.mp3`.
 
@@ -187,17 +187,30 @@ Missing files fall back to the built-in procedural audio (menu drone / combat ri
 
 Drop PNG/JPG files into `assets/images/`. These display as full-screen HD overlays at key story moments. The game looks for image keys matching interaction triggers.
 
-## Animated Reels (Recommended Future Direction)
+## Animated Reels (Short Cinematics)
 
-The engine's recommended path for short authored clips (e.g. a cinematic moment in the intro, ability unlocks, story beats) is **PNG frame sequences, not video files**:
+The engine's recommended path for short authored clips is **PNG frame sequences, not video files**. These are the game's "reels" — full-screen animated cutscenes that play at key story beats.
 
-- Export short clips (2-5 seconds) from a video tool as numbered PNG frames: `assets/animations/<key>/0001.png`, `0002.png`, ...
-- The game cycles them per frame. The engine ticks at **30 FPS**, so re-export clips at **30 fps** for 1:1 timing.
-- Make frames **1024x768** (or 4:3-safe) for full-screen scenes — the same canvas the HD overlays use. Transparent PNG frames are supported if a clip should composite *over* live gameplay instead.
-- Clips need **no separate audio** — the game reuses the music/ambient slot already playing for that moment.
-- Frames load once and blit; there is **no runtime video decoding and no new dependencies**. Zigzag round-trips like GIF or mp4 are *not* first-class in pygame; frame sequences give the same result with lossless quality and clean alpha.
+**Where they play (drop-in by key):**
 
-A sample folder (`assets/animations/`) is a live example of the pipeline when present; missing folders simply fall back to the normal cutscene/backdrop.
+| Key | Plays when | With no frames |
+|-----|------------|----------------|
+| `fall` | Opening cutscene: the stage gives way under Marduk | Built-in procedural fall scene (always visible out-of-the-box) |
+| `chamber` | Entering the Pit Lord's Chamber for the first time | Plain text cutscene |
+| `pit_lord` | Right before the Enforcer boss fight | Plain text banter cutscene |
+| `beast` | Right before the final battle with the Pit Lord | Plain text banter cutscene |
+| `ending` | Ending cutscene: climbing back onto the stage | Plain text cutscene |
+
+**To add a clip:**
+
+1. Build your animation in any tool that can export a PNG sequence (CapCut, After Effects, piskel, ffmpeg, even a script). Keep it **2–5 seconds**.
+2. Export as numbered frames into `assets/animations/<key>/` — e.g. `assets/animations/beast/0001.png`, `0002.png`, ... Any numeric filename works (`1.png`, `01.png`, `0001.png`); the game sorts them **numerically** and ignores non-images.
+3. Make frames **1024x768** for pixel-perfect full-screen scenes. Different sizes are auto-stretched to fill the screen, but exact 1024x768 is recommended.
+4. The game plays **one frame per tick at 30 FPS**, so export at **30 fps** for 1:1 timing (a 3-second clip = 90 frames).
+5. Clips need **no audio** — the game keeps the music/ambient already playing for that moment underneath.
+6. Launch once and check **`ASSET_MANIFEST.md`**: the **Animations** table lists every key with its live frame count and `READY (N frames)` vs `NO FRAMES` status. A `READY` row means your clip is wired in.
+
+Frames load once into memory (no runtime video decoding, no new dependencies). Missing folders simply fall back to the cutscene shown in the table above — the same stellar fallback rule as portraits and music.
 
 ## Adding Portrait Art
 

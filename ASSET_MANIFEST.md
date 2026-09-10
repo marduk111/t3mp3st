@@ -67,4 +67,20 @@ Slots with no file fall back to procedural audio (menu/combat) or silence.
 | ending | ending.mp3 | Ending cutscene | missing |
 | credits | credits.mp3 | Credits roll | missing |
 
+## Animations (short reels)
+
+Folder: `assets/animations/<key>/`. Frames: `0001.png`, `0002.png`, ...
+(any numbered name, sorted numerically), played one per engine tick at 30 FPS.
+Exact 1024x768 frames recommended; other sizes are stretched to fill the screen.
+Moments with no frames fall back to a plain cutscene (the intro 'fall' beat uses a
+built-in procedural placeholder scene so you can see how it works).
+
+| Key | Plays when | Frames found |
+|---|---|---|
+| fall | Opening cutscene: the stage gives way under Marduk | NO FRAMES - procedural fallback scene |
+| chamber | Entering the Pit Lord's Chamber for the first time | NO FRAMES - text-only |
+| pit_lord | Right before the Enforcer boss fight | NO FRAMES - text-only |
+| beast | Right before the final battle with the Pit Lord | NO FRAMES - text-only |
+| ending | Ending cutscene: climbing back onto the stage | NO FRAMES - text-only |
+
 _This file regenerates on every launch; your artwork and music files are never touched._

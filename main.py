@@ -53,6 +53,19 @@ MUSIC_DIR = os.path.join(ASSETS, "assets", "music")
 IMAGES_DIR = os.path.join(ASSETS, "assets", "images")
 PORTRAITS_DIR = os.path.join(ASSETS, "assets", "portraits")
 ANIM_DIR = os.path.join(ASSETS, "assets", "animations")
+for _dir in (MUSIC_DIR, IMAGES_DIR, PORTRAITS_DIR, ANIM_DIR):
+    os.makedirs(_dir, exist_ok=True)
+
+# Story beats that can play a numbered PNG frame sequence from
+# assets/animations/<key>/. Moments with no frames fall back to text-only
+# (the intro's "fall" beat ships with a built-in procedural placeholder).
+REEL_MOMENTS = {
+    "fall": "Opening cutscene: the stage gives way under Marduk",
+    "chamber": "Entering the Pit Lord's Chamber for the first time",
+    "pit_lord": "Right before the Enforcer boss fight",
+    "beast": "Right before the final battle with the Pit Lord",
+    "ending": "Ending cutscene: climbing back onto the stage",
+}
 
 
 def load_hd_images():
@@ -1769,17 +1782,18 @@ class CombatSystem:
 class Reel:
     """Short authored clip player. Looks for PNG/JPG frame sequences in
     `assets/animations/<key>/NNNN.png` and plays them at one frame per engine
-    tick (30 FPS). With no frames present, draws a procedural placeholder scene
-    so the beat is visible before real art exists."""
+    tick (30 FPS). With no frames present and `placeholder=True`, draws a
+    procedural scene so the beat is visible before real art exists."""
 
-    PROC_TICKS = 90  # 3 seconds of falling at FPS 30
+    PROC_TICKS = 90  # 3 seconds of the placeholder scene at FPS 30
 
     # (x, phase, speed, palette-index) so the embers are deterministic and cheap
     EMBERS = [(x, (k * 0.17 + x * 0.013) % 1.0, 0.5 + (k % 3) * 0.28, k % 4)
               for x in range(20, 1024, 16) for k in range(3)]
 
-    def __init__(self, key=""):
+    def __init__(self, key="", placeholder=True):
         self.key = key
+        self.placeholder = placeholder
         self.frame_paths = []
         self.frames = []
         self.tick = 0
@@ -1813,6 +1827,7 @@ class Reel:
 
     def preload(self):
         if self.frame_paths and not self.frames:
+            target = (SCREEN_W, SCREEN_H)
             for p in self.frame_paths:
                 try:
                     img = pygame.image.load(p)
@@ -1820,6 +1835,8 @@ class Reel:
                         img = img.convert()
                     except pygame.error:
                         pass
+                    if img.get_size() != target:
+                        img = pygame.transform.scale(img, target)
                     self.frames.append(img)
                 except Exception:
                     continue
@@ -1831,12 +1848,14 @@ class Reel:
         self.tick += 1
 
     def duration(self):
-        return len(self.frames) if self.frames else self.PROC_TICKS
+        return len(self.frames) if self.frames else (self.PROC_TICKS if self.placeholder else 0)
 
     def frame(self):
         if self.frames:
             return self.frames[min(self.tick, len(self.frames) - 1)]
-        return self._procedural_frame()
+        if self.placeholder:
+            return self._procedural_frame()
+        return None
 
     def _procedural_frame(self):
         if self._gradient is None:
@@ -1902,7 +1921,7 @@ class CutsceneSystem:
         self.reel_lines = set()
 
     def start(self, lines, bg_color=(5, 0, 0), callback=None, portrait=None, label="",
-              reel_key="", reel_lines=()):
+              reel_key="", reel_lines=(), reel_placeholder=True):
         self.active = True
         self.lines = lines
         self.current = 0
@@ -1914,7 +1933,7 @@ class CutsceneSystem:
         self.portrait_label = label
         self.reel_lines = set(reel_lines)
         if reel_key:
-            self.reel = Reel(reel_key)
+            self.reel = Reel(reel_key, placeholder=reel_placeholder)
             self.reel.preload()
             self.reel.reset()
         else:
@@ -2427,6 +2446,30 @@ class Game:
             file_status = "found" if slot in sound.slots else "missing"
             lines.append(f"| {slot} | {slot}.mp3 | {moment.get(slot, slot)} | {file_status} |")
 
+        lines += ["", "## Animations (short reels)", "",
+                  "Folder: `assets/animations/<key>/`. Frames: `0001.png`, `0002.png`, ...",
+                  "(any numbered name, sorted numerically), played one per engine tick at 30 FPS.",
+                  "Exact 1024x768 frames recommended; other sizes are stretched to fill the screen.",
+                  "Moments with no frames fall back to a plain cutscene (the intro 'fall' beat uses a",
+                  "built-in procedural placeholder scene so you can see how it works).",
+                  "",
+                  "| Key | Plays when | Frames found |", "|---|---|---|"]
+        for key, when in REEL_MOMENTS.items():
+            folder = os.path.join(ANIM_DIR, key)
+            frames = 0
+            if os.path.isdir(folder):
+                for f in os.listdir(folder):
+                    stem = os.path.splitext(f)[0]
+                    if f.lower().endswith((".png", ".jpg", ".jpeg")) and stem.isdigit():
+                        frames += 1
+            if frames:
+                status = "READY (%d frames)" % frames
+            elif key == "fall":
+                status = "NO FRAMES - procedural fallback scene"
+            else:
+                status = "NO FRAMES - text-only"
+            lines.append(f"| {key} | {when} | {status} |")
+
         lines += ["",
                   "_This file regenerates on every launch; your artwork and music files are never touched._",
                   ""]
@@ -2452,7 +2495,8 @@ class Game:
             "AZRAEL: 'Somewhere in the void below, a demon applauds politely. You love to see it.'",
             "THE END",
             "...FOR NOW",
-        ], bg_color=(0, 5, 0), callback=self.after_ending)
+        ], bg_color=(0, 5, 0), callback=self.after_ending,
+            reel_key="ending", reel_lines=(3, 9), reel_placeholder=False)
 
     def after_ending(self):
         self.state = GameState.CREDITS
@@ -2582,8 +2626,7 @@ class Game:
                                "AZRAEL: 'You talked to a soul. Pick with UP/DOWN and SPACE, little singer.'",
                                frames=240)
         elif kind == "enemy":
-            self.tutorial_combat_start()
-            self.combat.start(target, self.player)
+            self._engage_enemy(target)
         elif kind == "door":
             locked_reason = self.door_locked_reason(target)
             if locked_reason:
@@ -2592,7 +2635,56 @@ class Game:
             dest = target["target"]
             if dest in self.room_map:
                 sound.play_sfx("door")
-                self.transition_to(dest, target.get("spawn_x", 2), target.get("spawn_y", 2))
+                cb = None
+                if dest == "The Pit Lord's Chamber" and not self.story_flags.get("chamber_seen", False):
+                    cb = self.after_chamber_transition
+                self.transition_to(dest, target.get("spawn_x", 2), target.get("spawn_y", 2),
+                                   callback=cb)
+
+    def _engage_enemy(self, target):
+        if target.get("boss"):
+            self._pending_battle = target
+            key = "beast" if target["type"] == "beast" else "pit_lord"
+            beat_lines = {
+                "beast": [
+                    "AZRAEL: 'There he is. The headliner. You've been booked as his opener.'",
+                    "MARDUK: 'I didn't come here to open. I came to close the show.'",
+                ],
+                "pit_lord": [
+                    "AZRAEL: 'The Enforcer steps onto the throne-room floor. He's the warm-up act. You're the encore.'",
+                    "MARDUK: 'Warm-up's over.'",
+                ],
+            }
+            sound.play_ambient("boss", force=True)
+            self.cutscene.start(beat_lines[key], bg_color=(24, 2, 2),
+                                callback=self._start_pending_battle,
+                                reel_key=key, reel_lines=(0, 1), reel_placeholder=False)
+            self.state = GameState.CUTSCENE
+            return
+        self._start_enemy_battle(target)
+
+    def _start_pending_battle(self):
+        self._start_enemy_battle(self._pending_battle)
+        self._pending_battle = None
+
+    def _start_enemy_battle(self, target):
+        self.tutorial_combat_start()
+        self.combat.start(target, self.player)
+
+    def after_chamber_transition(self):
+        self.story_flags["chamber_seen"] = True
+        self.cutscene.start([
+            "AZRAEL: 'The Chamber of the Pit Lord. His house lights. The throne room of the pit.'",
+            "AZRAEL: 'Somewhere in the dark, the Beast is tuning up its setlist.'",
+        ], bg_color=(18, 2, 2), callback=self.after_chamber_intro,
+            reel_key="chamber", reel_lines=(0, 1), reel_placeholder=False)
+        self.state = GameState.CUTSCENE
+
+    def after_chamber_intro(self):
+        self.state = GameState.PLAYING
+        self.tutorial_once("tut_chamber",
+                           "AZRAEL: 'This is the last room on the bill, little singer. The vial heals. The Beast does not.'",
+                           frames=300)
 
     def door_is_unlocked(self, door):
         if door.get("requires_flag") and not self.story_flags.get(door["requires_flag"]):
@@ -3434,9 +3526,9 @@ class Game:
                  ("", None, None),
                  ("A BELLIGERENT DICKHEAD Production", fonts.render_band, (200, 50, 50)),
                  ("", None, None),
-                 ("Featured Singer: Marduk", fonts.render, (150, 100, 100)),
-                 ("Music: Marduk", fonts.render, (150, 100, 100)),
-                 ("Concept: Marduk", fonts.render, (150, 100, 100)),
+                 ("Featured Singer: Marduk Gault", fonts.render, (150, 100, 100)),
+                 ("Music: Marduk Gault", fonts.render, (150, 100, 100)),
+                 ("Concept: Marduk Gault", fonts.render, (150, 100, 100)),
                  ("Narration: AZRAEL D DESTROYER", fonts.render, (150, 100, 100)),
                  ("Code: Assisted by AI", fonts.render, (150, 100, 100)),
                  ("Suffering: Everyone", fonts.render, (150, 100, 100)),
