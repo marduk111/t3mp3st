@@ -81,6 +81,7 @@ built-in procedural placeholder scene so you can see how it works).
 | chamber | Entering the Pit Lord's Chamber for the first time | NO FRAMES - text-only |
 | pit_lord | Right before the Enforcer boss fight | NO FRAMES - text-only |
 | beast | Right before the final battle with the Pit Lord | NO FRAMES - text-only |
+| zombie | Right before the Zombie Fan fight | READY (240 frames) |
 | ending | Ending cutscene: climbing back onto the stage | NO FRAMES - text-only |
 
 _This file regenerates on every launch; your artwork and music files are never touched._

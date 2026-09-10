@@ -64,6 +64,7 @@ REEL_MOMENTS = {
     "chamber": "Entering the Pit Lord's Chamber for the first time",
     "pit_lord": "Right before the Enforcer boss fight",
     "beast": "Right before the final battle with the Pit Lord",
+    "zombie": "Right before the Zombie Fan fight",
     "ending": "Ending cutscene: climbing back onto the stage",
 }
 
@@ -2663,6 +2664,23 @@ class Game:
                                 reel_key=key, reel_lines=(0, 1), reel_placeholder=False)
             self.state = GameState.CUTSCENE
             return
+
+        self._pending_battle = target
+        pre_battle_lines = {
+            "zombie": [
+                "AZRAEL: 'Zombie Fan. They paid for the front row and never went home.'",
+                "MARDUK: 'Then unbook them. Loudly.'",
+            ],
+        }
+        key = target.get("type", "")
+        if key in pre_battle_lines and key in REEL_MOMENTS:
+            sound.play_ambient("combat", force=True)
+            self.cutscene.start(pre_battle_lines[key], bg_color=(16, 4, 12),
+                                callback=self._start_pending_battle,
+                                reel_key=key, reel_lines=(0, 1), reel_placeholder=False)
+            self.state = GameState.CUTSCENE
+            return
+        self._pending_battle = None
         self._start_enemy_battle(target)
 
     def _start_pending_battle(self):
