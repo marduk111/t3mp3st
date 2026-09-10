@@ -742,7 +742,8 @@ class Demo:
             self.log("WAVE %d of 4" % wave)
             self.banner = "WAVE %d OF 4" % wave
         self.banner_t = 2.0
-        self.music.combat_loop(wave, boss=(wave == 4))
+        if self.state == STATE_PLAY:
+            self.music.combat_loop(wave, boss=(wave == 4))
 
     def _spawn_wave(self):
         comp = WAVES[self.wave - 1]

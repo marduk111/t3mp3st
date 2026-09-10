@@ -433,6 +433,7 @@ class SoundManager:
 
     def _play_procedural(self, kind):
         self.stop_file()
+        self._stop_procedural()
         if kind == "menu":
             snd = self.menu_drone
         elif kind == "combat":
@@ -452,6 +453,7 @@ class SoundManager:
         try:
             self.menu_drone.stop()
             self.combat_riff.stop()
+            self.room_drone.stop()
         except Exception:
             pass
 

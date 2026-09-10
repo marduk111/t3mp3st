@@ -12,7 +12,7 @@ Folder: `assets/portraits/`  -  File: `<key>.png` (recommended 160x160).
 
 | Key | Status | Used as |
 |---|---|---|
-| azrael | PLACEHOLDER | AZRAEL D DESTROYER (narrator, hint-giver, ranged weapon) - introduction cutscene, battle appearances |
+| azrael | CUSTOM | AZRAEL D DESTROYER (narrator, hint-giver, ranged weapon) - introduction cutscene, battle appearances |
 | beast | PLACEHOLDER | the Pit Lord himself (Boss) - Enemy the Pit Lord himself (Boss) - The Pit Lord's Chamber |
 | beer | PLACEHOLDER | a warm beer - Item a warm beer - The Stage of Sin |
 | blood_puddle | PLACEHOLDER | a pool of blood - Item a pool of blood - Backstage Gore |
@@ -40,7 +40,7 @@ Folder: `assets/portraits/`  -  File: `<key>.png` (recommended 160x160).
 | vip_blood | PLACEHOLDER | a slick of blood - Item a slick of blood - The Green Room of Vile |
 | vip_broken_lamp | PLACEHOLDER | a cracked stage lamp - Item a cracked stage lamp - The Green Room of Vile |
 | vip_energy_drink | PLACEHOLDER | a sketchy drink - Item a sketchy drink - The Green Room of Vile |
-| zombie | PLACEHOLDER | the Zombie Fan - Enemy the Zombie Fan - The Stage of Sin |
+| zombie | CUSTOM | the Zombie Fan - Enemy the Zombie Fan - The Stage of Sin |
 
 ## Music - key moments
 
@@ -50,9 +50,9 @@ Slots with no file fall back to procedural audio (menu/combat) or silence.
 
 | Slot | File | Plays when | File status |
 |---|---|---|---|
-| menu | menu.mp3 | Main menu | missing |
-| intro | intro.mp3 | Opening cutscene | missing |
-| stage | stage.mp3 | The Stage of Sin | missing |
+| menu | menu.mp3 | Main menu | found |
+| intro | intro.mp3 | Opening cutscene | found |
+| stage | stage.mp3 | The Stage of Sin | found |
 | backstage | backstage.mp3 | Backstage Gore | missing |
 | merch | merch.mp3 | The Merch Table of Madness | missing |
 | pit | pit.mp3 | The Mosh Pit of Souls | missing |

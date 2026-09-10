@@ -108,6 +108,7 @@ class BattleBridge:
 
         self.demo.reset()
         self.demo.state = rd.STATE_PLAY
+        self.demo.music.combat_loop(self.demo.wave, boss=self.boss)
         self.demo.level = max(1, player_ref.level)
         self.demo.grit = rd.START_GRIT + player_ref.grit // 2
         if self.boss:
