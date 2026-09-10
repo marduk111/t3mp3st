@@ -60,6 +60,11 @@ Slots with no file fall back to procedural audio (menu/combat) or silence.
 | booth | booth.mp3 | The Sound Booth of Despair | missing |
 | chamber | chamber.mp3 | The Pit Lord's Chamber | missing |
 | combat | combat.mp3 | Any normal fight | missing |
+| zombie | zombie.mp3 | Zombie Fan fight (drop your own song) | found |
+| corpse | corpse.mp3 | Reanimated Roadie fight | missing |
+| shadow | shadow.mp3 | Stage Ninja fight | missing |
+| demon | demon.mp3 | Enforcer (non-boss) fight | missing |
+| engineer | engineer.mp3 | Sound Engineer fight | missing |
 | boss | boss.mp3 | Pit Lord's Enforcer or the Beast (boss fight) | missing |
 | levelup | levelup.mp3 | LEVEL UP banner (one-shot sting) | missing |
 | discovery | discovery.mp3 | Unlocking a new ability tome (one-shot sting) | missing |
@@ -82,6 +87,10 @@ built-in procedural placeholder scene so you can see how it works).
 | pit_lord | Right before the Enforcer boss fight | NO FRAMES - text-only |
 | beast | Right before the final battle with the Pit Lord | NO FRAMES - text-only |
 | zombie | Right before the Zombie Fan fight | READY (240 frames) |
+| corpse | Right before the Reanimated Roadie fight | NO FRAMES - text-only |
+| shadow | Right before the Stage Ninja fight | NO FRAMES - text-only |
+| demon | Right before the Enforcer fight (non-boss) | NO FRAMES - text-only |
+| engineer | Right before the Sound Engineer fight | NO FRAMES - text-only |
 | ending | Ending cutscene: climbing back onto the stage | NO FRAMES - text-only |
 
 _This file regenerates on every launch; your artwork and music files are never touched._

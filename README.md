@@ -174,7 +174,12 @@ Music is **moment-based**: each game event looks for a file named after that eve
 | booth | `booth.mp3` | The Sound Booth of Despair |
 | chamber | `chamber.mp3` | The Pit Lord's Chamber |
 | combat | `combat.mp3` | Any normal fight |
-| boss | `boss.mp3` | Boss fights (Enforcer / Pit Lord) |
+| zombie | `zombie.mp3` | Zombie Fan fight (pre-battle + battle) |
+| corpse | `corpse.mp3` | Reanimated Roadie fight |
+| shadow | `shadow.mp3` | Stage Ninja fight |
+| demon | `demon.mp3` | Enforcer fight (non-boss variant) |
+| engineer | `engineer.mp3` | Sound Engineer fight |
+| boss | `boss.mp3` | Boss fights (Pit Lord + Enforcer boss) |
 | levelup | `levelup.mp3` | LEVEL UP banner (one-shot sting) |
 | discovery | `discovery.mp3` | Unlocking a new ability tome (one-shot sting) |
 | victory | `victory.mp3` | Beast defeated (one-shot sting) |
@@ -199,6 +204,11 @@ The engine's recommended path for short authored clips is **PNG frame sequences,
 | `chamber` | Entering the Pit Lord's Chamber for the first time | Plain text cutscene |
 | `pit_lord` | Right before the Enforcer boss fight | Plain text banter cutscene |
 | `beast` | Right before the final battle with the Pit Lord | Plain text banter cutscene |
+| `zombie` | Right before the Zombie Fan fight | Plain text banter cutscene |
+| `corpse` | Right before the Reanimated Roadie fight | Plain text banter cutscene |
+| `shadow` | Right before the Stage Ninja fight | Plain text banter cutscene |
+| `demon` | Right before the Enforcer fight (non-boss) | Plain text banter cutscene |
+| `engineer` | Right before the Sound Engineer fight | Plain text banter cutscene |
 | `ending` | Ending cutscene: climbing back onto the stage | Plain text cutscene |
 
 **To add a clip:**
@@ -236,3 +246,28 @@ To add dialogue, create new interaction handlers in the `Game` class following t
 ## Save System
 
 Press F5 to save. Progress is written to `save.json` inside the project folder. Load from the main menu. Tutorial flags and story flags persist across saves, along with your **level, XP, unlocked abilities, upgraded stats, and inventory**.
+
+## Converting MP4 to Animation Frames
+
+Drop your MP4 anywhere and convert it to a numbered PNG sequence the game picks up automatically:
+
+```
+mkdir assets\animations\<key>
+ffmpeg -i myclip.mp4 -vf "fps=30,scale=1024:768:flags=lanczos" assets\animations\<key>\%04d.png
+```
+
+`<key>` is any moment from the Animations table above (`fall`, `beast`, `zombie`, ...). Frames are read in numeric order (`0001.png`, `0002.png`, ...) and played one per tick at 30 FPS. Omit `scale=1024:768:flags=lanczos` to keep the source size — the game auto-stretches whatever you give it.
+
+## Adding a New Animation Moment (Developer)
+
+1. Add an entry to `REEL_MOMENTS` near the top of `main.py`: `"<key>": "When this plays"`.
+2. Add the same key to `SoundManager.MUSIC_SLOTS` if you also want a song slot, and to `SoundManager.BATTLE_SLOTS` if it's a pre-fight beat.
+3. Add a row to the manifest moment dict (the one passed to `generate_asset_manifest`).
+4. Wire the cutscene trigger where the moment should fire — `after_intro` for `fall`, `_engage_enemy` for fights, `transition_to` callback for room-entry, etc. Pass `reel_key=<key>, reel_lines=(...)` to `cutscene.start`.
+5. Drop frames into `assets/animations/<key>/` and a song into `assets/music/<key>.<ext>`.
+6. Launch and check `ASSET_MANIFEST.md` — the new row flips to `READY` once files are detected.
+
+## Sharing with Testers
+
+Send a tester the GitHub link: `https://github.com/marduk111/theatre-of-sorrow`. They run `git clone`, then `python -m pip install -r requirements.txt` and `python main.py` (or `run.bat` on Windows / `bash run.sh` on Linux). Save files (`save.json`) and per-user custom art/music they drop into `assets/` are local — they're not committed unless you choose to commit them.
+

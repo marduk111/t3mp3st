@@ -65,6 +65,10 @@ REEL_MOMENTS = {
     "pit_lord": "Right before the Enforcer boss fight",
     "beast": "Right before the final battle with the Pit Lord",
     "zombie": "Right before the Zombie Fan fight",
+    "corpse": "Right before the Reanimated Roadie fight",
+    "shadow": "Right before the Stage Ninja fight",
+    "demon": "Right before the Enforcer fight (non-boss)",
+    "engineer": "Right before the Sound Engineer fight",
     "ending": "Ending cutscene: climbing back onto the stage",
 }
 
@@ -330,7 +334,8 @@ class SoundManager:
     # play at the matching moment in-game.
     MUSIC_SLOTS = [
         "menu", "intro", "stage", "backstage", "merch", "pit", "greenroom",
-        "booth", "chamber", "combat", "boss", "levelup", "discovery",
+        "booth", "chamber", "combat", "zombie", "corpse", "shadow", "demon",
+        "engineer", "boss", "levelup", "discovery",
         "victory", "ending", "credits",
     ]
 
@@ -344,6 +349,9 @@ class SoundManager:
         "The Sound Booth of Despair": "booth",
         "The Pit Lord's Chamber": "chamber",
     }
+
+    # Music slots that play during a fight (any non-boss enemy type or a boss).
+    BATTLE_SLOTS = frozenset({"combat", "zombie", "corpse", "shadow", "demon", "engineer", "boss"})
 
     def __init__(self):
         self.external_tracks = load_music_files()
@@ -415,7 +423,7 @@ class SoundManager:
         if not path:
             if slot in ("menu", "intro", "ending", "credits"):
                 self._play_procedural("menu")
-            elif slot in ("combat", "boss"):
+            elif slot in self.BATTLE_SLOTS:
                 self._play_procedural("combat")
             else:
                 self._play_procedural("room")
@@ -480,7 +488,7 @@ class SoundManager:
         self.play_ambient("combat", force=True)
 
     def stop_combat_music(self):
-        if self.ambient_slot in ("combat", "boss"):
+        if self.ambient_slot in self.BATTLE_SLOTS:
             self._stop_procedural()
             self.stop_file()
             self.ambient_slot = None
@@ -510,7 +518,7 @@ class SoundManager:
                 return os.path.basename(path)
             if self.ambient_slot == "menu":
                 return "Procedural Hellnoise (menu drone)"
-            if self.ambient_slot in ("combat", "boss"):
+            if self.ambient_slot in self.BATTLE_SLOTS:
                 return "Procedural Combat Riff"
             return "Procedural Room Drone"
         return "silence"
@@ -2438,6 +2446,11 @@ class Game:
             "booth": "The Sound Booth of Despair",
             "chamber": "The Pit Lord's Chamber",
             "combat": "Any normal fight",
+            "zombie": "Zombie Fan fight (drop your own song)",
+            "corpse": "Reanimated Roadie fight",
+            "shadow": "Stage Ninja fight",
+            "demon": "Enforcer (non-boss) fight",
+            "engineer": "Sound Engineer fight",
             "boss": "Pit Lord's Enforcer or the Beast (boss fight)",
             "levelup": "LEVEL UP banner (one-shot sting)",
             "discovery": "Unlocking a new ability tome (one-shot sting)",
@@ -2671,10 +2684,26 @@ class Game:
                 "AZRAEL: 'Zombie Fan. They paid for the front row and never went home.'",
                 "MARDUK: 'Then unbook them. Loudly.'",
             ],
+            "corpse": [
+                "AZRAEL: 'The Reanimated Roadie. Still trying to fix the monitors in death.'",
+                "MARDUK: 'I am the only monitor he needs to worry about.'",
+            ],
+            "shadow": [
+                "AZRAEL: 'Stage Ninja. Believes the spotlight was stolen from him. It was.'",
+                "MARDUK: 'And I just booked the replacement.'",
+            ],
+            "demon": [
+                "AZRAEL: 'The Pit Lord sent an Enforcer to warm up the room for you.'",
+                "MARDUK: 'Tell the Pit Lord I do my own warm-ups.'",
+            ],
+            "engineer": [
+                "AZRAEL: 'The Sound Engineer. The mix was wrong. Your face was wrong. Everything was wrong.'",
+                "MARDUK: 'Then let me remix him.'",
+            ],
         }
         key = target.get("type", "")
         if key in pre_battle_lines and key in REEL_MOMENTS:
-            sound.play_ambient("combat", force=True)
+            sound.play_ambient(key, force=True)
             self.cutscene.start(pre_battle_lines[key], bg_color=(16, 4, 12),
                                 callback=self._start_pending_battle,
                                 reel_key=key, reel_lines=(0, 1), reel_placeholder=False)
