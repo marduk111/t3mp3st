@@ -364,6 +364,7 @@ class MusicCue:
         for n in names:
             if re.match(r"^combat(\d*)\.(mp3|ogg|wav)$", n, re.I):
                 got.append(os.path.join(self.music_dir, n))
+        got.sort(key=lambda p: (not p.lower().endswith(".ogg"), p.lower()))
         return got
 
     def scan_boss(self):
@@ -374,6 +375,7 @@ class MusicCue:
         for n in names:
             if re.match(r"^boss(\d*)\.(mp3|ogg|wav)$", n, re.I):
                 got.append(os.path.join(self.music_dir, n))
+        got.sort(key=lambda p: (not p.lower().endswith(".ogg"), p.lower()))
         return got
 
     def play(self, path):

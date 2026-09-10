@@ -15,6 +15,8 @@ python main.py
 
 **Windows, no terminal needed:** double-click **`run.bat`** (full game) or **`run_demo.bat`** (repeatable battle-sandbox). It creates a private environment and installs pygame-ce for you on first launch.
 
+**Linux/macOS, same one-command bootstrap:** `bash run.sh` (full game) or `bash run_demo.sh` (battle sandbox) — identical private-venv setup. On Linux with executable perms set you can also run `./run.sh`. Precise manual steps for Python-savvy users live below the clone block.
+
 Everything is procedurally generated — there are **no asset downloads**; a fresh clone boots straight to the menu.
 
 - Requires **Python 3.11** and **pygame-ce** (`pip install -r requirements.txt`).
@@ -102,7 +104,7 @@ To drop in your real artwork later, save a PNG named after the entity into `asse
 - `roadie.png`, `last_roadie.png`, `sketchy_vendor.png` — NPCs
 - `beer.png`, `mic.png`, `crypt_key.png`, `broken_bottle.png`, `guitaraxe.png`, `tome_double_down.png`, etc. — items (full list in **ASSET_MANIFEST.md**)
 
-Any PNG in `assets/portraits/` matching a portrait key **replaces** the placeholder automatically. Recommended size: 160x160.
+Any PNG in `assets/portraits/` matching a portrait key **replaces** the placeholder automatically. Recommended size: 160x160 (any source resolution works; larger masters like 256x256 downscale cleanly).
 
 Portrait keys are lowercased with spaces replaced by underscores (e.g. an NPC named "Last Roadie" → `last_roadie.png`).
 
@@ -155,6 +157,8 @@ The story is told to you by **AZRAEL D DESTROYER** — the band's cat-god, the n
 There's a **live asset manifest** that tells you exactly what to drop where. Launch the game once and check **`ASSET_MANIFEST.md`** in the project folder — it is regenerated on every start/load and lists every portrait and music slot with live status (`missing` / `found`).
 
 Music is **moment-based**: each game event looks for a file named after that event's slot in `assets/music/`. Drop `<slot>.mp3` (or `.ogg` / `.wav`) and it plays at that exact moment. Numbered names also work: `01-stage.mp3` = `stage.mp3`.
+
+**Prefer `.ogg` for anything that loops** (rooms + battles): MP3 carries roughly 25-50 ms of encoder padding that re-applies at each loop and can cause an audible hiccup. OGG Vorbis stores sample-accurate tags, so it loops seamlessly under pygame. If you must export MP3, encode gapless (LAME `--nogap`), trim leading/trailing silence, and cut the loop at a zero crossing. `.wav` also loops cleanly but is much larger.
 
 **Combat playlists** (used by every battle — the RPG's fights included): drop several tracks as `combat1.mp3`, `combat2.mp3`, ... and the battle music rotates between them so no fight sounds identical. Same for `boss1.mp3`, `boss2.mp3`, ... in boss fights.
 

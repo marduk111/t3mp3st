@@ -337,7 +337,11 @@ class SoundManager:
                 stripped = self._strip_numeric_prefix(base).lower()
                 for slot in self.MUSIC_SLOTS:
                     if slot in (base, stripped):
-                        slots.setdefault(slot, os.path.join(MUSIC_DIR, f))
+                        cand = os.path.join(MUSIC_DIR, f)
+                        prev = slots.get(slot)
+                        if prev is None or (cand.lower().endswith(".ogg")
+                                            and not prev.lower().endswith(".ogg")):
+                            slots[slot] = cand
         return slots
 
     def play_ambient(self, slot, force=True):
