@@ -2,27 +2,32 @@
 
 A horror RPG where the singer of Belligerent Dickhead falls through the floor during a gig and must fight through hell to finish the set.
 
-## Run It
+## Try the Beta (Testers)
+
+Clone it, install one package, run:
 
 ```
+git clone https://github.com/marduk111/t3mp3st.git
+cd t3mp3st
+python -m pip install -r requirements.txt
 python main.py
 ```
 
-No external assets required. All audio is procedurally generated.
+**Windows, no terminal needed:** double-click **`run.bat`** (full game) or **`run_demo.bat`** (repeatable battle-sandbox). It creates a private environment and installs pygame-ce for you on first launch.
 
-### For Your Tester
+Everything is procedurally generated — there are **no asset downloads**; a fresh clone boots straight to the menu.
 
-- Requires **Python 3.11** and the **pygame-ce** package (`pip install pygame-ce`).
+- Requires **Python 3.11** and **pygame-ce** (`pip install -r requirements.txt`).
 - Verified working combo on Windows: `python 3.11` + `pygame-ce 2.5.8`.
-- On other Python versions, `python3` (or `python3.11`) usually works the same.
+- macOS/Linux: use `python3 main.py` / `python3 rts_demo.py`.
 - The game saves to `save.json` in the same folder (freely deletable for a clean start).
-- Fullscreen toggle: F11.
+- Fullscreen toggle: **F11** (works anywhere, even mid-battle).
 
 Found a bug? Record how you got there (keys pressed, what you saw) — the developer would love a minimal repro.
 
 ## Stage Fright Tactics (Demo)
 
-A separate, self-contained battle-system feel-test in `rts_demo.py` — the future combat mode for the main game, built as its own file so it never touches the working RPG.
+A turn-based stage-defense battler, inspired by Blood Bowl action points + C&C/Advance Wars base building. This **is** the RPG's battle mode (wired in via `BattleBridge`), and it's also playable standalone as a repeatable sandbox.
 
 ```
 python rts_demo.py
@@ -38,6 +43,7 @@ It's a turn-based stage-defense battler, inspired by Blood Bowl action points + 
 - **Undo** — one-step undo on moves/attacks, plus confirm styling on the action panel.
 - **Music** — scans `assets/music/` for `combat1.mp3`, `combat2.mp3`, ... and `boss1.mp3`, ... and rotates through them so every battle sounds different (falls back to silence gracefully).
 - **Retry** — R restarts the battle on a freshly randomized board (different obstacles each run).
+- **Retreat** — Q abandons the battle and puts you back in the room (side-effects like core loss or rewards are skipped).
 
 This is a placeholder for the future hybrid: roam the RPG, trigger a battle, and fight it here.
 
@@ -54,14 +60,16 @@ This is a placeholder for the future hybrid: roam the RPG, trigger a battle, and
 | F5 | Save game |
 | ESC | Menu / Back |
 
-Combat:
+Combat (stage-defense battle mode):
 | Key | Action |
 |-----|--------|
-| 1 | Attack |
-| 2 | First unlocked ability (or Taunt) |
-| 3..9 | More abilities as they unlock, then Taunt/Flee |
+| Mouse | Click a band member to select them; click an enemy to attack; use the panel buttons for END TURN, towers, groupies, and Azrael's skills |
+| ESC | Pause / resume |
+| R | Restart the current battle |
+| Q | Retreat back to the room |
+| ENTER | Confirm when a battle ends (win / loss / retreat) |
 
-Abilities are cast with their number key. Their order changes as you unlock more — read the on-screen list during battle.
+A hints bar at the bottom of the battle screen always shows these keys.
 
 ## Tutorial System
 
@@ -102,12 +110,9 @@ When you add or remove rooms, NPCs, enemies, or items, the manifest updates auto
 ## RPG Systems
 
 - **Interaction range** — no need to face objects. Press SPACE/ENTER within a 5-tile radius and the nearest interactable (item, NPC, enemy, or door) is auto-selected. Priority: items > NPCs > enemies > doors.
-- **Levels & XP** — every enemy drops XP. Leveling up increases Max HP, ATK, and DEF and fully heals you. Level 2 unlocks your first skill automatically.
-- **Abilities** — as you level up and find skill tomes in the world, you unlock special combat moves cast with their number key. Abilities cost **GRIT** or **SANITY**:
-  - **Power Chord** (1.6x, 30 GRIT) — auto-unlocked at level 2
-  - **Double Down** (2.0x, 12 SANITY) — hidden tome in the Sound Booth
-  - **Feedback Howl** (2.5x, 55 GRIT) — an effects pedal hidden in the Mosh Pit
-- **GRIT meter** — fills when you land or take hits in combat. Acts as both your Scream fuel and a **currency**.
+- **Levels & XP** — every battle win drops XP. Leveling up increases Max HP, ATK, and DEF and fully heals you. Your level also gates the band's battle skills: the Frontman gains **SCREAM** at level 2 and **BLITZ** at level 4.
+- **Band skills** — battle abilities are cast from the battle panel (no number keys): SCREAM is a landing-zone blast (5 AP), BLITZ a double shred at range (5 AP). Skill tomes found in the world add named abilities to your character sheet (see Inventory).
+- **GRIT** — the shared currency. You start each battle with more of it if you've saved up, and earn +25 per victory. In battle it buys towers and groupies; in the world it fuels your Scream heal and the vendor's permanent upgrades.
 - **Vendor upgrades** — the Sketchy Vendor returns to it repeatedly to spend GRIT on permanent stat boosts (Max HP +10, Attack +3, or Defense +1). GRIT carries over between visits.
 - **Passive regen** — when out of combat, you slowly recover +1 HP every few seconds.
 - **Sanity** — drops from Screaming, certain items, and some abilities. Low sanity causes screen glitching.
