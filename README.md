@@ -187,6 +187,18 @@ Missing files fall back to the built-in procedural audio (menu drone / combat ri
 
 Drop PNG/JPG files into `assets/images/`. These display as full-screen HD overlays at key story moments. The game looks for image keys matching interaction triggers.
 
+## Animated Reels (Recommended Future Direction)
+
+The engine's recommended path for short authored clips (e.g. a cinematic moment in the intro, ability unlocks, story beats) is **PNG frame sequences, not video files**:
+
+- Export short clips (2-5 seconds) from a video tool as numbered PNG frames: `assets/animations/<key>/0001.png`, `0002.png`, ...
+- The game cycles them per frame. The engine ticks at **30 FPS**, so re-export clips at **30 fps** for 1:1 timing.
+- Make frames **1024x768** (or 4:3-safe) for full-screen scenes — the same canvas the HD overlays use. Transparent PNG frames are supported if a clip should composite *over* live gameplay instead.
+- Clips need **no separate audio** — the game reuses the music/ambient slot already playing for that moment.
+- Frames load once and blit; there is **no runtime video decoding and no new dependencies**. Zigzag round-trips like GIF or mp4 are *not* first-class in pygame; frame sequences give the same result with lossless quality and clean alpha.
+
+A sample folder (`assets/animations/`) is a live example of the pipeline when present; missing folders simply fall back to the normal cutscene/backdrop.
+
 ## Adding Portrait Art
 
 See the **Portraits** section above — `assets/portraits/` holds per-character mugshots that replace placeholders. The **Asset Manifest** lists every key currently in use.

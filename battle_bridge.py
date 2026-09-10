@@ -91,8 +91,11 @@ class BattleBridge:
         self.boss = False
         self.kills_on_win = 0
         self.victory_line = ""
+        self.ambient = None
 
     def start(self, enemy, player_ref):
+        if self.ambient is not None:
+            self.ambient.stop_music()
         self.enemy = enemy
         self.player_ref = player_ref
         self.resolved = False
@@ -161,7 +164,7 @@ class BattleBridge:
         self.demo.log("AZRAEL: 'And so the singer leaves the stage today. A cliffhanger the roadies will gossip about for decades.'")
         self.result = "flee"
         self.resolved = True
-        pygame.mixer.music.stop()
+        self.demo.music.stop_all()
 
     def update(self, player_ref):
         self.player_ref = player_ref
@@ -181,12 +184,12 @@ class BattleBridge:
         self.victory_line = _pick_victory_line(self.enemy.get("type"))
         self.result = "win"
         self.resolved = True
-        pygame.mixer.music.stop()
+        self.demo.music.stop_all()
 
     def _apply_lose(self):
         self.result = "lose"
         self.resolved = True
-        pygame.mixer.music.stop()
+        self.demo.music.stop_all()
 
     def render(self, surface, player_ref):
         self.demo.render()

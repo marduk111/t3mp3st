@@ -1,4 +1,6 @@
+import array
 import os
+import math
 import random
 import re
 import sys
@@ -355,6 +357,68 @@ class MusicCue:
     def __init__(self):
         self.music_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "music")
         self.available = pygame.mixer.get_init() is not None
+        self._fb_channel = pygame.mixer.Channel(6) if self.available else None
+        self._menu_fb = None
+        self._riff_fb = None
+
+    @staticmethod
+    def _mk_sound(samples):
+        arr = array.array('h')
+        for v in samples:
+            c = max(-32768, min(32767, int(v * 32767)))
+            arr.append(c)
+            arr.append(c)
+        return pygame.mixer.Sound(buffer=arr.tobytes())
+
+    @staticmethod
+    def _gen_drone():
+        sr = 22050
+        dur = 4.0
+        out = []
+        for i in range(int(sr * dur)):
+            t = i / sr
+            env = min(1, t * 2) * min(1, (dur - t) * 2)
+            base = math.sin(2 * math.pi * 55 * t) * 0.3
+            sub = math.sin(2 * math.pi * 27.5 * t) * 0.2
+            rumble = math.sin(2 * math.pi * 40 * t + math.sin(t * 2) * 3) * 0.15
+            out.append((math.tanh(base * 3) * 0.4 + sub + rumble) * env)
+        return MusicCue._mk_sound(out)
+
+    @staticmethod
+    def _gen_riff():
+        sr = 22050
+        notes = [110, 110, 130.81, 110, 146.83, 130.81, 110, 98]
+        n = int(sr * 3.0)
+        note_len = n // len(notes)
+        out = []
+        for freq in notes:
+            for i in range(note_len):
+                t = i / sr
+                prog = i / note_len
+                env = max(0, 1 - prog * 1.5) * min(1, prog * 20)
+                saw = 0
+                for h in range(1, 6):
+                    saw += math.sin(2 * math.pi * freq * h * t) / h
+                saw *= 0.3
+                palm = math.sin(2 * math.pi * freq * 2 * t) * 0.15 * env
+                out.append((saw + palm) * env * 0.6)
+        return MusicCue._mk_sound(out)
+
+    def _fallback(self, kind):
+        src = self._menu_fb if kind == "menu" else self._riff_fb
+        if src is None:
+            src = self._gen_drone() if kind == "menu" else self._gen_riff()
+            if kind == "menu":
+                self._menu_fb = src
+            else:
+                self._riff_fb = src
+        if self._fb_channel is None:
+            return
+        try:
+            self._fb_channel.stop()
+            self._fb_channel.play(src, loops=-1)
+        except Exception:
+            pass
 
     def scan_combat(self):
         if not self.available or not os.path.isdir(self.music_dir):
@@ -396,6 +460,7 @@ class MusicCue:
             if os.path.isfile(p):
                 self.play(p)
                 return
+        self._fallback("menu")
 
     def combat_loop(self, wave, boss=False):
         if not self.available:
@@ -409,6 +474,21 @@ class MusicCue:
         got = self.scan_combat()
         if got:
             self.play(got[(wave - 1) % len(got)])
+            return
+        self._fallback("riff")
+
+    def stop_all(self):
+        if not self.available:
+            return
+        try:
+            pygame.mixer.music.stop()
+        except Exception:
+            pass
+        if self._fb_channel is not None:
+            try:
+                self._fb_channel.stop()
+            except Exception:
+                pass
 
 
 class Demo:
@@ -1175,7 +1255,7 @@ class Demo:
         if self.state == STATE_PLAY:
             hint = self.font_sm.render(
                 "ESC pause   R restart   Q retreat   F11 fullscreen", True, COL["dim"])
-            self.screen.blit(hint, (BOARD_X, SCREEN_H - 20))
+            self.screen.blit(hint, (BOARD_X, 46))
         if self.banner and self.banner_t > 0:
             self._render_banner()
         if self.overlay == "pause":
@@ -1399,10 +1479,14 @@ class Demo:
         self.screen.blit(surf, (rect.x + 6, rect.y + 8))
 
     def _render_log(self):
-        y = LOG_Y + 6
-        for line in self.messages:
+        visible = self.messages[-2:]
+        box = pygame.Rect(BOARD_X, LOG_Y - 2, BOARD_PX_W - 8, 44)
+        pygame.draw.rect(self.screen, COL["panel"], box)
+        pygame.draw.rect(self.screen, COL["panel2"], box, 1)
+        y = LOG_Y + 8
+        for line in visible:
             surf = self.font_sm.render(line, True, COL["dim"])
-            self.screen.blit(surf, (BOARD_X + 4, y))
+            self.screen.blit(surf, (BOARD_X + 8, y))
             y += 20
 
     def _render_banner(self):

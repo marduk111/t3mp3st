@@ -19,6 +19,12 @@ except ImportError:
 
 pygame.init()
 
+try:
+    pygame.mixer.quit()
+    pygame.mixer.init(frequency=22050, size=-16, channels=2)
+except Exception:
+    pass
+
 SCREEN_W, SCREEN_H = 1024, 768
 FPS = 30
 TILE = 32
@@ -37,7 +43,8 @@ def toggle_fullscreen():
     global screen, fullscreen
     fullscreen = not fullscreen
     if fullscreen:
-        screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+        screen = pygame.display.set_mode((SCREEN_W, SCREEN_H),
+                                         pygame.FULLSCREEN | pygame.SCALED)
     else:
         screen = pygame.display.set_mode((SCREEN_W, SCREEN_H))
 
@@ -45,6 +52,7 @@ ASSETS = os.path.dirname(__file__)
 MUSIC_DIR = os.path.join(ASSETS, "assets", "music")
 IMAGES_DIR = os.path.join(ASSETS, "assets", "images")
 PORTRAITS_DIR = os.path.join(ASSETS, "assets", "portraits")
+ANIM_DIR = os.path.join(ASSETS, "assets", "animations")
 
 
 def load_hd_images():
@@ -142,6 +150,32 @@ class Fonts:
     def render_band(self, text, color=(200, 50, 50)):
         return self.band.render(text, True, color)
 
+    def wrap(self, text, max_width, big=False):
+        f = self.body_big if big else self.body
+        out = []
+        cur = ""
+        for w in text.split():
+            joined = cur + " " + w if cur else w
+            if cur and f.size(joined)[0] > max_width:
+                out.append(cur)
+                cur = w
+            else:
+                cur = joined
+        if cur:
+            out.append(cur)
+        return out, f
+
+    def render_wrapped(self, text, color=(200, 200, 200), big=False, max_width=700):
+        lines, f = self.wrap(text, max_width, big)
+        sfs = [f.render(l, True, color) for l in lines]
+        h = sum(s.get_height() for s in sfs) + 2 * (len(sfs) - 1)
+        surf = pygame.Surface((max_width, h), pygame.SRCALPHA)
+        y = 0
+        for s in sfs:
+            surf.blit(s, (0, y))
+            y += s.get_height() + 2
+        return surf
+
 
 fonts = Fonts()
 
@@ -163,7 +197,7 @@ class ProceduralAudio:
             for v in ints:
                 stereo.append(v)
                 stereo.append(v)
-            sound = pygame.sndarray.make_sound(stereo)
+            sound = pygame.mixer.Sound(buffer=stereo.tobytes())
         return sound
 
     @staticmethod
@@ -260,6 +294,21 @@ class ProceduralAudio:
                 samples.append((saw + palm) * env * 0.6)
         return ProceduralAudio._make_sound(samples)
 
+    @staticmethod
+    def generate_room_drone():
+        samples = []
+        duration = 4.0
+        n = int(ProceduralAudio.RATE * duration)
+        for i in range(n):
+            t = i / ProceduralAudio.RATE
+            env = min(1, t * 2) * min(1, (duration - t) * 2)
+            base = math.sin(2 * math.pi * 43.65 * t) * 0.3
+            sub = math.sin(2 * math.pi * 21.8 * t) * 0.2
+            wob = math.sin(2 * math.pi * 0.35 * t + math.sin(t * 0.5) * 1.5) * 0.25
+            fifth = math.sin(2 * math.pi * 65.4 * t) * 0.12
+            samples.append((base + sub + wob + fifth) * env)
+        return ProceduralAudio._make_sound(samples)
+
 
 class SoundManager:
     # Narrative music slots. Players can drop files matching these names
@@ -317,6 +366,7 @@ class SoundManager:
     def _generate_music_loops(self):
         self.menu_drone = ProceduralAudio.generate_menu_drone()
         self.combat_riff = ProceduralAudio.generate_combat_riff()
+        self.room_drone = ProceduralAudio.generate_room_drone()
 
     @staticmethod
     def _strip_numeric_prefix(name):
@@ -354,9 +404,7 @@ class SoundManager:
             elif slot in ("combat", "boss"):
                 self._play_procedural("combat")
             else:
-                self._stop_procedural()
-                self.stop_file()
-                self.ambient_slot = None
+                self._play_procedural("room")
             return
         self._stop_procedural()
         if force or self.ambient_slot != slot or not self._file_playing():
@@ -372,7 +420,12 @@ class SoundManager:
 
     def _play_procedural(self, kind):
         self.stop_file()
-        snd = self.menu_drone if kind == "menu" else self.combat_riff
+        if kind == "menu":
+            snd = self.menu_drone
+        elif kind == "combat":
+            snd = self.combat_riff
+        else:
+            snd = self.room_drone
         if not snd:
             return
         try:
@@ -443,6 +496,7 @@ class SoundManager:
                 return "Procedural Hellnoise (menu drone)"
             if self.ambient_slot in ("combat", "boss"):
                 return "Procedural Combat Riff"
+            return "Procedural Room Drone"
         return "silence"
 
     def take_announce(self):
@@ -1712,6 +1766,127 @@ class CombatSystem:
                 surface.blit(hint, (cx - hint.get_width() // 2, cy + 140))
 
 
+class Reel:
+    """Short authored clip player. Looks for PNG/JPG frame sequences in
+    `assets/animations/<key>/NNNN.png` and plays them at one frame per engine
+    tick (30 FPS). With no frames present, draws a procedural placeholder scene
+    so the beat is visible before real art exists."""
+
+    PROC_TICKS = 90  # 3 seconds of falling at FPS 30
+
+    # (x, phase, speed, palette-index) so the embers are deterministic and cheap
+    EMBERS = [(x, (k * 0.17 + x * 0.013) % 1.0, 0.5 + (k % 3) * 0.28, k % 4)
+              for x in range(20, 1024, 16) for k in range(3)]
+
+    def __init__(self, key=""):
+        self.key = key
+        self.frame_paths = []
+        self.frames = []
+        self.tick = 0
+        self._gradient = None
+        self._flash = None
+        if key:
+            self.load(key)
+
+    def load(self, key):
+        self.key = key
+        self.frame_paths = []
+        self.frames = []
+        folder = os.path.join(ANIM_DIR, key)
+        if os.path.isdir(folder):
+            names = []
+            for f in os.listdir(folder):
+                if not f.lower().endswith((".png", ".jpg", ".jpeg")):
+                    continue
+                stem = os.path.splitext(f)[0]
+                try:
+                    n = int(stem)
+                except ValueError:
+                    continue
+                names.append((n, os.path.join(folder, f)))
+            names.sort()
+            self.frame_paths = [p for _, p in names]
+        return self
+
+    def is_placeholder(self):
+        return not self.frame_paths
+
+    def preload(self):
+        if self.frame_paths and not self.frames:
+            for p in self.frame_paths:
+                try:
+                    img = pygame.image.load(p)
+                    try:
+                        img = img.convert()
+                    except pygame.error:
+                        pass
+                    self.frames.append(img)
+                except Exception:
+                    continue
+
+    def reset(self):
+        self.tick = 0
+
+    def advance(self):
+        self.tick += 1
+
+    def duration(self):
+        return len(self.frames) if self.frames else self.PROC_TICKS
+
+    def frame(self):
+        if self.frames:
+            return self.frames[min(self.tick, len(self.frames) - 1)]
+        return self._procedural_frame()
+
+    def _procedural_frame(self):
+        if self._gradient is None:
+            g = pygame.Surface((SCREEN_W, SCREEN_H))
+            for y in range(SCREEN_H):
+                k = y / SCREEN_H
+                col = (int(16 - 9 * k), int(4 - 2 * k), int(18 - 6 * k))
+                pygame.draw.line(g, col, (0, y), (SCREEN_W, y))
+            self._gradient = g
+        if self._flash is None:
+            self._flash = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+            self._flash.fill((255, 205, 130))
+        s = pygame.Surface((SCREEN_W, SCREEN_H))
+        s.blit(self._gradient, (0, 0))
+        t = self.tick / float(self.PROC_TICKS)
+        half = 0.5 * self.PROC_TICKS
+
+        if t < 0.18:
+            for i in range(6):
+                x0 = 100 + i * 150 + (i % 3) * 30
+                y0 = SCREEN_H * (0.66 + 0.05 * i)
+                fade = 1.0 - t / 0.18
+                col = (int(255 * fade), int(190 * fade), int(80 * fade))
+                pygame.draw.line(s, col, (x0, y0), (x0 + (90 + 25 * i), y0 + 18 * (1 if i % 2 else -1)), 3)
+
+        for x, ph, sp, ci in self.EMBERS:
+            yy = SCREEN_H - (((ph + t * sp) % 1.0) * SCREEN_H)
+            cols = [(236, 182, 112), (200, 172, 90), (214, 152, 244), (168, 112, 220)]
+            pygame.draw.circle(s, cols[ci], (x, int(yy)), 2 if ci else 3)
+
+        cx = SCREEN_W // 2 + int(math.sin(t * 7.0) * 8)
+        p = max(0.0, min(1.0, (t - 0.12) / 0.58))
+        py = int(SCREEN_H * (0.06 + 0.9 * p * p))
+        tail = int(90 + 150 * (1.0 - p))
+        pygame.draw.line(s, (255, 190, 80), (cx, py),
+                         (cx + int(math.sin(t * 7.0) * 5), py + tail), 8)
+        pygame.draw.line(s, (255, 245, 215), (cx - 1, py),
+                         (cx + int(math.sin(t * 7.0) * 5), py + tail // 2), 3)
+        pygame.draw.circle(s, (255, 240, 190), (cx, py), 7)
+
+        if t > 0.86:
+            k = min(1.0, (t - 0.86) / 0.08)
+            a = int(150 * k)
+            if t > 0.94:
+                a = int(150 * max(0.0, 1.0 - (t - 0.94) / 0.06))
+            self._flash.set_alpha(a)
+            s.blit(self._flash, (0, 0))
+        return s
+
+
 class CutsceneSystem:
     def __init__(self):
         self.active = False
@@ -1723,8 +1898,11 @@ class CutsceneSystem:
         self.callback = None
         self.portrait_img = None
         self.portrait_label = ""
+        self.reel = None
+        self.reel_lines = set()
 
-    def start(self, lines, bg_color=(5, 0, 0), callback=None, portrait=None, label=""):
+    def start(self, lines, bg_color=(5, 0, 0), callback=None, portrait=None, label="",
+              reel_key="", reel_lines=()):
         self.active = True
         self.lines = lines
         self.current = 0
@@ -1734,6 +1912,13 @@ class CutsceneSystem:
         self.callback = callback
         self.portrait_img = portraits.get(portrait) if portrait else None
         self.portrait_label = label
+        self.reel_lines = set(reel_lines)
+        if reel_key:
+            self.reel = Reel(reel_key)
+            self.reel.preload()
+            self.reel.reset()
+        else:
+            self.reel = None
 
     def update(self):
         if not self.active:
@@ -1742,6 +1927,8 @@ class CutsceneSystem:
         if self.timer % 2 == 0:
             if self.char_index < len(self.lines[self.current]):
                 self.char_index += 1
+        if self.reel is not None and self.current in self.reel_lines:
+            self.reel.advance()
 
     def handle_input(self, event):
         if not self.active:
@@ -1762,6 +1949,10 @@ class CutsceneSystem:
         if not self.active:
             return
         surface.fill(self.bg_color)
+        if self.reel is not None and self.current in self.reel_lines:
+            f = self.reel.frame()
+            if f is not None:
+                surface.blit(f, (0, 0))
         text_y = SCREEN_H // 2 - 20
         if self.portrait_img:
             px = SCREEN_W // 2 - self.portrait_img.get_width() // 2
@@ -1771,12 +1962,18 @@ class CutsceneSystem:
                 lb = fonts.render(self.portrait_label, (200, 120, 50), big=True)
                 surface.blit(lb, (SCREEN_W // 2 - lb.get_width() // 2, py + self.portrait_img.get_height() + 4))
             text_y = py + self.portrait_img.get_height() + 60
-        display = self.lines[self.current][:self.char_index]
-        ts = fonts.render(display, (200, 200, 200), big=True)
+        full = self.char_index >= len(self.lines[self.current])
+        display = self.lines[self.current] if full else self.lines[self.current][:self.char_index]
+        if full:
+            ts = fonts.render_wrapped(display, (200, 200, 200), big=True,
+                                      max_width=SCREEN_W - 120)
+        else:
+            ts = fonts.render(display, (200, 200, 200), big=True)
         surface.blit(ts, (SCREEN_W // 2 - ts.get_width() // 2, text_y))
-        if self.char_index >= len(self.lines[self.current]):
+        if full:
             hint = fonts.render_small("[ENTER]", (100, 100, 100))
-            surface.blit(hint, (SCREEN_W // 2 - hint.get_width() // 2, text_y + 50))
+            surface.blit(hint, (SCREEN_W // 2 - hint.get_width() // 2,
+                                text_y + ts.get_height() + 10))
 
 
 class Game:
@@ -1797,6 +1994,7 @@ class Game:
         self.player = Player()
         self.dialogue = DialogueBox()
         self.combat = battle_bridge.BattleBridge(screen)
+        self.combat.ambient = sound
         self.cutscene = CutsceneSystem()
         self.track_announcement = ""
         self.track_announcement_timer = 0
@@ -2139,7 +2337,8 @@ class Game:
             "And if you ever get stuck... ask. I see the whole venue from up here.",
             "Now go warm up the strings. The encore is going to be loud.",
         ], bg_color=(16, 4, 12), callback=self.after_intro,
-            portrait="azrael", label="AZRAEL D DESTROYER")
+            portrait="azrael", label="AZRAEL D DESTROYER",
+            reel_key="fall", reel_lines=(6, 7))
 
     def after_intro(self):
         self.state = GameState.PLAYING
@@ -2284,10 +2483,6 @@ class Game:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_m:
                 sound.toggle_mute()
-            elif event.key == pygame.K_F11:
-                toggle_fullscreen()
-                self.tutorial_once("tut_fullscreen",
-                                   "F11 toggles fullscreen. F11 again to go back to windowed.")
             elif event.key == pygame.K_i:
                 self.tutorial_once("tut_inventory",
                                    "I opens your inventory. Press I or ESC to close it.")
@@ -3045,7 +3240,8 @@ class Game:
                      (SCREEN_W - fonts.render_small("BELLIGrant DICKHEAD").get_width() - 10, 46))
 
         if self.track_announcement_timer > 0:
-            at = fonts.render(self.track_announcement, (200, 200, 200))
+            at = fonts.render_wrapped(self.track_announcement, (200, 200, 200),
+                                      max_width=SCREEN_W - 160)
             at.set_alpha(min(255, self.track_announcement_timer * 4))
             screen.blit(at, (SCREEN_W // 2 - at.get_width() // 2, 70))
 
@@ -3058,11 +3254,11 @@ class Game:
         # Delayed objective reveal with portrait
         if self.objective_banner_timer > 0 and self.current_room:
             reveal = self.current_room.objective if not self.objective_banner else self.objective_banner
-            r = pygame.Rect(SCREEN_W // 2 - 260, 150, 520, 42)
+            rt = fonts.render_wrapped(reveal, (255, 220, 150), max_width=500)
+            r = pygame.Rect(SCREEN_W // 2 - 260, 150, 520, rt.get_height() + 24)
             panel = pygame.Surface((r.width, r.height), pygame.SRCALPHA)
             panel.fill((15, 10, 5, 235))
             pygame.draw.rect(panel, (200, 120, 40), panel.get_rect(), 2)
-            rt = fonts.render_small(reveal, (255, 220, 150))
             panel.blit(rt, (10, 12))
             screen.blit(panel, r.topleft)
             if self.objective_banner_portrait:
@@ -3072,7 +3268,8 @@ class Game:
 
         # Help banner (one-time tips)
         if self.help_banner and self.help_banner_timer > 0:
-            hb = fonts.render(self.help_banner, (255, 220, 50))
+            hb = fonts.render_wrapped(self.help_banner, (255, 220, 50),
+                                      max_width=SCREEN_W - 80)
             panel = pygame.Surface((hb.get_width() + 24, hb.get_height() + 12), pygame.SRCALPHA)
             panel.fill((10, 10, 5, 230))
             pygame.draw.rect(panel, (200, 160, 40), panel.get_rect(), 1)
@@ -3295,6 +3492,8 @@ def main():
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_F11:
                     toggle_fullscreen()
+                    game.tutorial_once("tut_fullscreen",
+                                       "F11 toggles fullscreen. F11 again to go back to windowed.")
                 elif event.key == pygame.K_ESCAPE:
                     if not game.combat.active and game.state == GameState.PLAYING:
                         game.state = GameState.MENU
