@@ -113,6 +113,7 @@ class GameState(Enum):
     HD_REVEAL = auto()
     GAME_OVER = auto()
     INVENTORY = auto()
+    HELP = auto()
     CUTSCENE = auto()
     CREDITS = auto()
 
@@ -2276,6 +2277,10 @@ class Game:
                 self.state = GameState.INVENTORY
             elif event.key == pygame.K_F5:
                 self.save_game()
+            elif event.key == pygame.K_h:
+                self.tutorial_once("tut_help",
+                                   "TIP: Press H anytime to reopen this guide (controls + mechanics).")
+                self.state = GameState.HELP
             elif event.key == pygame.K_f:
                 self.use_scream()
             elif event.key in (pygame.K_RETURN, pygame.K_SPACE):
@@ -2941,7 +2946,7 @@ class Game:
             screen.blit(ot, (SCREEN_W // 2 - ot.get_width() // 2, 300 + i * 50))
 
         hints = [
-            "WASD: Move | SPACE/ENTER: Interact | I: Inventory | F: Scream (Heal when GRIT full) | F11: Fullscreen",
+            "WASD: Move | SPACE/ENTER: Interact | I: Inventory | H: Help | F: Scream (Heal when GRIT full) | F11: Fullscreen",
             "M: Mute | F5: Save | Drop music by slot name in assets/music/ - see ASSET_MANIFEST.md",
         ]
         for i, h in enumerate(hints):
@@ -3102,6 +3107,76 @@ class Game:
         screen.blit(fonts.render_small("Press I or ESC to close", (80, 40, 40)),
                      (SCREEN_W // 2 - 80, SCREEN_H - 40))
 
+    def render_help(self):
+        screen.fill((12, 8, 8))
+        screen.blit(fonts.render("HELP", (240, 130, 90), big=True),
+                    (SCREEN_W // 2 - fonts.render("HELP", (240, 130, 90), big=True).get_width() // 2, 22))
+
+        def title(txt):
+            screen.blit(fonts.render_small(txt, (160, 140, 190)), (28, y[0]))
+            y[0] += 24
+
+        def row(txt):
+            screen.blit(fonts.render_small(txt, (205, 205, 205)), (44, y[0]))
+            y[0] += 20
+
+        y = [70]
+        title("WORLD CONTROLS")
+        for t in [
+            "WASD / Arrows ............ Move",
+            "SPACE / ENTER ............. Interact / talk / advance dialogue",
+            "I ......................... Inventory",
+            "F ......................... Scream (heal when GRIT is full)",
+            "H ......................... This help screen",
+            "M ......................... Mute audio",
+            "F5 ........................ Save game",
+            "F11 ....................... Toggle fullscreen",
+            "ESC ....................... Back to menu",
+        ]:
+            row(t)
+        y[0] += 6
+
+        title("BATTLE CONTROLS")
+        for t in [
+            "Mouse ..................... Select a band member, click a foe to attack",
+            "Panel buttons ............. END TURN / UNDO / BUILD TOWER / HIRE GROUPIE",
+            "ESC ....................... Pause",
+            "R ......................... Restart the current battle",
+            "Q ......................... Retreat from the battle (no reward)",
+            "ENTER .................... Confirm when a battle ends",
+        ]:
+            row(t)
+        y[0] += 6
+
+        title("BATTLE MECHANICS")
+        for t in [
+            "Move = 1 AP per tile | melee = 3 AP | ranged = 4 AP",
+            "Hold the Stage (core) until all 4 waves fall",
+            "GRIT: start 60, +8 per kill, +40 + wave*20 per wave cleared",
+            "Watchtower = 45 GRIT (2 turns to build, then auto-fires at",
+            "  every enemy within range 4 each round)",
+            "Groupie = 20 GRIT from the Support Van (max 6 at once)",
+            "Band XP is shared: need 30 + (level-1)*26 to level up",
+            "Frontman skills: SCREAM (5 AP) at level 2, BLITZ (5 AP) at level 4",
+            "Boss battles are a single powerful enemy - win for big rewards",
+        ]:
+            row(t)
+        y[0] += 6
+
+        title("RPG MECHANICS")
+        for t in [
+            "Every battle win grants XP, kills, and +25 GRIT",
+            "Level ups heal fully and raise HP/ATK/DEF",
+            "GRIT also buys vendor upgrades: MaxHP+10 (25G), ATK+3 (30G), DEF+1 (20G)",
+            "Screaming costs sanity; low sanity makes the world flicker",
+            "Some doors need a key item or a defeated boss",
+            "Check the objective banner (top center) for what to do next",
+        ]:
+            row(t)
+
+        screen.blit(fonts.render_small("Press H, I, or ESC to close", (80, 40, 40)),
+                    (SCREEN_W // 2 - 115, SCREEN_H - 30))
+
     def render_game_over(self):
         screen.fill((0, 0, 0))
         t = pygame.time.get_ticks() / 1000
@@ -3145,6 +3220,8 @@ class Game:
             self.render_game_over()
         elif self.state == GameState.INVENTORY:
             self.render_inventory()
+        elif self.state == GameState.HELP:
+            self.render_help()
         elif self.state == GameState.CREDITS:
             self.render_credits()
 
@@ -3180,6 +3257,8 @@ def main():
                         sound.play_menu_music()
                     elif not game.combat.active and game.state == GameState.INVENTORY:
                         game.state = GameState.PLAYING
+                    elif not game.combat.active and game.state == GameState.HELP:
+                        game.state = GameState.PLAYING
 
             if game.cutscene.active:
                 game.cutscene.handle_input(event)
@@ -3194,6 +3273,10 @@ def main():
             elif game.state == GameState.INVENTORY:
                 if event.type == pygame.KEYDOWN:
                     if event.key in (pygame.K_i, pygame.K_ESCAPE):
+                        game.state = GameState.PLAYING
+            elif game.state == GameState.HELP:
+                if event.type == pygame.KEYDOWN:
+                    if event.key in (pygame.K_h, pygame.K_ESCAPE, pygame.K_i):
                         game.state = GameState.PLAYING
             elif game.state == GameState.GAME_OVER:
                 if event.type == pygame.KEYDOWN:

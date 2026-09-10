@@ -36,16 +36,22 @@ python rts_demo.py
 It's a turn-based stage-defense battler, inspired by Blood Bowl action points + C&C/Advance Wars base building:
 
 - **AP per unit** — move = 1 AP/tile, melee = 3 AP, ranged = 4 AP. Spend each unit, then END TURN; the horde follows the same rules.
-- **Hold the Stage** — the Core must survive 4 waves. Lose the Core, lose the battle. You deploy with one **ready Watchtower** and the Support Van.
-- **GRIT economy** — trickle per kill + a wave-clear bonus. Spend it on Watchtowers (45, ~2 turns to build; each **auto-fires at every enemy in its range-4 once per round**) or Groupies from the Support Van (20, hire with a Van queue).
-- **Shared band XP** — every hit, kill, and ability from *any* band member feeds one level pool (unlike WC3, grunts count too). Levels raise the whole team.
-- **Melee vs ranged** — clicks auto-resolve: adjacent targets take the melee attack (3 AP); targets beyond that (up to each unit's reach) get the ranged attack where a unit has one (4 AP). Units specialize — Groupies and the Bass Player are melee bruisers, and the Frontman's ranged hit is Azrael D Destroyer streaking in at range 3. Every skill-up is another way Azrael attacks: **SCREAM** (landing-zone blast) at band level 2, **BLITZ** (double shred at range) at level 4.
+- **Hold the Stage** — the Core must survive 4 fixed waves. Lose the Core, lose the battle. You deploy with one **ready Watchtower** and the Support Van.
+- **GRIT economy (exact numbers)** — start with **60**. Earn **+8 per kill** and a wave-clear bonus of **40 + 20 × wave number** (waves 1–4, i.e. 60/80/100/120). Spend it:
+  - **Watchtower = 45 GRIT** — takes ~2 turns to build, then **auto-fires at every enemy in its range-4 once per round** (5–8 damage).
+  - **Groupie = 20 GRIT** — hired from the Support Van (max **6** fielded at once, one meets you from the Van's queue each turn).
+- **Shared band XP** — every hit, kill, and kill from *any* band member feeds one level pool (unlike WC3, grunts count too). Needs **30 + (level−1)×26** per level; every level-up heals and toughens the whole team.
+- **Melee vs ranged** — clicks auto-resolve: adjacent targets take the melee attack (3 AP); targets beyond that (up to each unit's reach) get the ranged attack where a unit has one (4 AP). Units specialize — Groupies are melee bruisers, while the Frontman hits hard up close and, at range, summons **Azrael D Destroyer** streaking in at range 3. Every band level-up is another way Azrael attacks: **SCREAM** (landing-zone blast, 5 AP) at band level 2, **BLITZ** (double shred at range, 5 AP) at level 4.
 - **Undo** — one-step undo on moves/attacks, plus confirm styling on the action panel.
 - **Music** — scans `assets/music/` for `combat1.mp3`, `combat2.mp3`, ... and `boss1.mp3`, ... and rotates through them so every battle sounds different (falls back to silence gracefully).
 - **Retry** — R restarts the battle on a freshly randomized board (different obstacles each run).
 - **Retreat** — Q abandons the battle and puts you back in the room (side-effects like core loss or rewards are skipped).
 
-This is a placeholder for the future hybrid: roam the RPG, trigger a battle, and fight it here.
+This is the hybrid now: roam the RPG, trigger a battle, fight it here — the same battle engine powers both.
+
+## Help Guide
+
+Press **H** during gameplay for a full in-game cheat sheet: every control (world + battle) and the exact battle/RPG mechanics (AP costs, GRIT economy, band XP, skills, vendor prices, sanity). Close it with H, I, or ESC. A tips-toast also reminds you the first time you open it.
 
 ## Controls
 
@@ -54,6 +60,7 @@ This is a placeholder for the future hybrid: roam the RPG, trigger a battle, and
 | WASD / Arrows | Move |
 | SPACE / ENTER | Interact / Talk / Advance dialogue |
 | I | Inventory |
+| H | Help guide (controls + mechanics) |
 | F | Scream (heal when GRIT is full) |
 | M | Mute audio |
 | F11 | Toggle fullscreen |
@@ -77,7 +84,7 @@ The game teaches itself as you play. Watch for:
 - **Objectives** — shown at top center, per-room guidance with a portrait reveal when you enter a room for the first time
 - **Help banners** — one-time tips appear at the bottom when you perform actions for the first time
 - **Contextual prompts** — bottom HUD shows what SPACE will do when you're near something interactable
-- **Combat tutorial** — first fight shows controls; each new system teaches itself when it matters
+- **Combat tutorial** — first fight shows controls; each new system teaches itself when it matters, and **H** opens the full help guide anytime
 - **GRIT/Scream prompt** — appears when GRIT is full and you can heal
 - **Sanity warning** — warns when sanity drops low
 
@@ -113,7 +120,7 @@ When you add or remove rooms, NPCs, enemies, or items, the manifest updates auto
 - **Levels & XP** — every battle win drops XP. Leveling up increases Max HP, ATK, and DEF and fully heals you. Your level also gates the band's battle skills: the Frontman gains **SCREAM** at level 2 and **BLITZ** at level 4.
 - **Band skills** — battle abilities are cast from the battle panel (no number keys): SCREAM is a landing-zone blast (5 AP), BLITZ a double shred at range (5 AP). Skill tomes found in the world add named abilities to your character sheet (see Inventory).
 - **GRIT** — the shared currency. You start each battle with more of it if you've saved up, and earn +25 per victory. In battle it buys towers and groupies; in the world it fuels your Scream heal and the vendor's permanent upgrades.
-- **Vendor upgrades** — the Sketchy Vendor returns to it repeatedly to spend GRIT on permanent stat boosts (Max HP +10, Attack +3, or Defense +1). GRIT carries over between visits.
+- **Vendor upgrades** — the Sketchy Vendor spends GRIT on permanent stat boosts: **Max HP +10 (25 GRIT)**, **Attack +3 (30 GRIT)**, or **Defense +1 (20 GRIT)**. GRIT carries over between visits.
 - **Passive regen** — when out of combat, you slowly recover +1 HP every few seconds.
 - **Sanity** — drops from Screaming, certain items, and some abilities. Low sanity causes screen glitching.
 - **Locked doors** — some doors require a key item (look for the crypt key on the Stage).
@@ -124,7 +131,7 @@ When you add or remove rooms, NPCs, enemies, or items, the manifest updates auto
 
 - **Pre-battle banter** — each fight opens with a trash-talking exchange between the enemy and Belligerent Dickhead. Lines are per enemy type.
 - **Victory one-liners** — every win earns an action-hero style quip, shown on the victory screen.
-- **Boss fights** — the Pit Lord's Enforcer (Mosh Pit) and the Pit Lord himself (Chamber) are multi-phase encounters with unique banter.
+- **Boss fights** — the Pit Lord's Enforcer (Mosh Pit) and the Pit Lord himself (Chamber) are **single-enemy battles** in the same stage-defense engine, scaled to a one-versus-you duel with their own name, banter, and victory lines. Beat the Beast and the ending cutscene plays.
 
 ## Rooms (7 total)
 
@@ -146,7 +153,7 @@ There's a **live asset manifest** that tells you exactly what to drop where. Lau
 
 Music is **moment-based**: each game event looks for a file named after that event's slot in `assets/music/`. Drop `<slot>.mp3` (or `.ogg` / `.wav`) and it plays at that exact moment. Numbered names also work: `01-stage.mp3` = `stage.mp3`.
 
-**Combat playlists** (used by the Stage Fright demo, and coming to the RPG's fights): drop several tracks as `combat1.mp3`, `combat2.mp3`, ... and the battle music rotates between them so no fight sounds identical. Same for `boss1.mp3`, `boss2.mp3`, ... in boss fights.
+**Combat playlists** (used by every battle — the RPG's fights included): drop several tracks as `combat1.mp3`, `combat2.mp3`, ... and the battle music rotates between them so no fight sounds identical. Same for `boss1.mp3`, `boss2.mp3`, ... in boss fights.
 
 | Slot | File | Plays when |
 |---|---|---|
