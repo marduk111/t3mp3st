@@ -16,6 +16,7 @@ Folder: `assets/portraits/`  -  File: `<key>.png` (recommended 160x160).
 | beast | PLACEHOLDER | the Pit Lord himself (Boss) - Enemy the Pit Lord himself (Boss) - The Pit Lord's Chamber |
 | beer | PLACEHOLDER | a warm beer - Item a warm beer - The Stage of Sin |
 | blood_puddle | PLACEHOLDER | a pool of blood - Item a pool of blood - Backstage Gore |
+| bludgeon_the_clown | PLACEHOLDER | Bludgeon the Clown - NPC 'Bludgeon the Clown' - The Stage of Sin |
 | booth_earplugs | PLACEHOLDER | sound-dampening earplugs - Item sound-dampening earplugs - The Sound Booth of Despair |
 | broken_bottle | PLACEHOLDER | the Broken Bottle - Item the Broken Bottle - Backstage Gore |
 | chamber_vial | PLACEHOLDER | a vial of Pit Lord blood - Item a vial of Pit Lord blood - The Pit Lord's Chamber |
@@ -31,7 +32,7 @@ Folder: `assets/portraits/`  -  File: `<key>.png` (recommended 160x160).
 | mixer_fader | PLACEHOLDER | the Master Fader - Item the Master Fader - The Sound Booth of Despair |
 | mysterious_lager | PLACEHOLDER | a laced lager - Item a laced lager - The Merch Table of Madness |
 | pit_mystery_vial | PLACEHOLDER | a glowing vial - Item a glowing vial - The Mosh Pit of Souls |
-| player | PLACEHOLDER | The protagonist (Marduk) - menu, cutscenes, HUD banners |
+| player | CUSTOM | The protagonist (Marduk) - menu, cutscenes, HUD banners |
 | roadie | PLACEHOLDER | Roadie - NPC 'Roadie' - The Stage of Sin |
 | shadow | PLACEHOLDER | the Stage Ninja - Enemy the Stage Ninja - Backstage Gore |
 | sketchy_vendor | PLACEHOLDER | Sketchy Vendor - NPC 'Sketchy Vendor' - The Merch Table of Madness |

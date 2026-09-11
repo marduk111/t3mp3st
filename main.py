@@ -955,6 +955,11 @@ class PortraitSystem:
                 elif kind == "teeth":
                     for dx in range(spec[1], spec[2]):
                         art.set_at((dx, 20), (230, 230, 230))
+                elif kind == "nose":
+                    nc = spec[1] if len(spec) > 1 else (200, 40, 40)
+                    for dx in (15, 16):
+                        for dy in (15, 16):
+                            art.set_at((dx, dy), nc)
         scaled = pygame.transform.scale(art, self.SIZE)
         s.blit(scaled, (0, 0))
         # border
@@ -986,6 +991,9 @@ class PortraitSystem:
             return self._surface((120, 40, 40), [("mouth", 13, 18, 22)])
         if key in ("sketchy_vendor",):
             return self._surface((90, 40, 120), [("mouth", 12, 19, 22)])
+        if key in ("bludgeon", "bludgeon_the_clown"):
+            return self._surface((215, 195, 165),
+                                 [("nose",), ("glow",), ("teeth", 8, 24), ("mouth", 12, 20, 22)])
         # items
         if key in ("beer", "mysterious_lager"):
             return self._item_surface((200, 180, 50), "beer")
@@ -2096,12 +2104,15 @@ class CutsceneSystem:
         if reel_after and self.reel is not None and self.reel.duration() > 0:
             self.reel.reset()
 
-    @staticmethod
-    def _strip_speaker(line):
+    def _strip_speaker(self, line):
         upper = line.upper()
         for prefix in ("AZRAEL:", "MARDUK:", "PIT LORD:", "ZOMBIE FAN:"):
             if upper.startswith(prefix):
                 return line[len(prefix):].lstrip(" '"), prefix[:-1]
+        for key in self.portrait_map:
+            ukey = key.upper() + ":"
+            if upper.startswith(ukey):
+                return line[len(ukey):].lstrip(" '"), key
         return line, None
 
     def _shown_line(self):
@@ -2315,6 +2326,8 @@ class Game:
         room_stage.npcs = [
             {"x": 8, "y": 5, "color": (240, 130, 90), "active": True,
              "name": "Roadie", "interact": "roadie"},
+            {"x": 6, "y": 5, "color": (240, 200, 60), "active": True,
+             "name": "Bludgeon the Clown", "interact": "bludgeon"},
         ]
         room_stage.doors = [{"x": 10, "y": 8, "target": "Backstage Gore", "spawn_x": 2, "spawn_y": 7}]
 
@@ -2368,6 +2381,8 @@ class Game:
         room_merch.npcs = [
             {"x": 3, "y": 7, "color": (150, 50, 150), "active": True,
              "name": "Sketchy Vendor", "interact": "vendor"},
+            {"x": 16, "y": 4, "color": (240, 200, 60), "active": True,
+             "name": "Bludgeon the Clown", "interact": "bludgeon"},
         ]
         room_merch.items = [
             {"x": 8, "y": 5, "type": "beer", "active": True, "interact": "mysterious_lager"},
@@ -2904,19 +2919,33 @@ class Game:
                     "MARDUK: 'Warm-up's over.'",
                 ],
             }
+            lines = list(beat_lines[key])
+            portrait_map = {
+                "AZRAEL": ("azrael", "AZRAEL D DESTROYER"),
+                "MARDUK": ("player", "MARDUK"),
+            }
+            boss_banter = battle_bridge.BANTER.get(target["type"], [])
+            boss_name = CombatSystem.ENEMY_NAMES.get(target["type"], "the Pit Lord")
+            if boss_banter:
+                boss_line = boss_banter[0]
+                boss_speaker = boss_line.split(":", 1)[0].upper()
+                lines.insert(0, boss_line)
+                portrait_map[boss_speaker] = (target["type"], boss_name)
+            else:
+                lines.insert(0, "THE PIT LORD: 'You think your noise scares me?'")
+                portrait_map["THE PIT LORD"] = ("beast", boss_name)
             sound.stop_music()
-            self.cutscene.start(beat_lines[key], bg_color=(24, 2, 2),
+            self.cutscene.start(lines, bg_color=(24, 2, 2),
                                 callback=self._start_pending_battle,
                                 reel_key=key, reel_placeholder=False,
                                 reel_after=True, reel_voice="boss",
-                                portrait_map={
-                                    "AZRAEL": ("azrael", "AZRAEL D DESTROYER"),
-                                    "MARDUK": ("player", "MARDUK"),
-                                })
+                                portrait_map=portrait_map)
             self.state = GameState.CUTSCENE
             return
 
         self._pending_battle = target
+        enemy_name = CombatSystem.ENEMY_NAMES.get(target.get("type", ""), target.get("type", "").title())
+        enemy_lines = battle_bridge.BANTER.get(target.get("type", ""), [])
         pre_battle_lines = {
             "zombie": [
                 "AZRAEL: 'Zombie Fan. They paid for the front row and never went home.'",
@@ -2941,15 +2970,26 @@ class Game:
         }
         key = target.get("type", "")
         if key in pre_battle_lines and key in REEL_MOMENTS:
+            lines = list(pre_battle_lines[key])
+            portrait_map = {
+                "AZRAEL": ("azrael", "AZRAEL D DESTROYER"),
+                "MARDUK": ("player", "MARDUK"),
+            }
+            if enemy_lines:
+                enemy_line = enemy_lines[0]
+                enemy_speaker = enemy_line.split(":", 1)[0].upper()
+                lines.insert(0, enemy_line)
+                portrait_map[enemy_speaker] = (key, enemy_name)
+            else:
+                enemy_speaker = ("THE " + enemy_name).upper()
+                lines.insert(0, f"{enemy_speaker}: 'You think you headline this stage?'")
+                portrait_map[enemy_speaker] = (key, enemy_name)
             sound.stop_music()
-            self.cutscene.start(pre_battle_lines[key], bg_color=(16, 4, 12),
+            self.cutscene.start(lines, bg_color=(16, 4, 12),
                                 callback=self._start_pending_battle,
                                 reel_key=key, reel_placeholder=False,
                                 reel_after=True, reel_voice=key,
-                                portrait_map={
-                                    "AZRAEL": ("azrael", "AZRAEL D DESTROYER"),
-                                    "MARDUK": ("player", "MARDUK"),
-                                })
+                                portrait_map=portrait_map)
             self.state = GameState.CUTSCENE
             return
         self._pending_battle = None
@@ -3331,6 +3371,28 @@ class Game:
                     "'Kevin's got horns, big teeth, and a terrible sense of humor.'",
                     "'Knock him into the pit. That's how you close a set.'"
                 ], "Last Roadie", (110, 230, 110))
+
+        elif name == "Bludgeon the Clown":
+            talks = self.story_flags.get("bludgeon_talked", 0) + 1
+            self.story_flags["bludgeon_talked"] = talks
+            if self.story_flags.get("pit_lord_defeated"):
+                self.dialogue.start([
+                    "BLUDGEON THE CLOWN: 'The Enforcer is GONE?! That was my warm-up crowd, headliner! Do you know how expensive RED is on this merch table?!'",
+                    "BLUDGEON THE CLOWN: 'Fine. FINE. The Beast headlines next. When you drop him I'll print the commemorative shirts MYSELF. With my OWN bits. You'll buy four.'"
+                ], "Bludgeon the Clown", (240, 200, 60))
+            elif talks == 1:
+                self.dialogue.start([
+                    "AZRAEL: 'The band's blood-and-confetti promoter. Marduk doesn't pay him so much as keep him breathing - he calls it marketing synergy with a blackmail garnish. His words.'",
+                    "BLUDGEON THE CLOWN: 'GOOD EVENING, SCREAMERS! I am BLUDGEON THE CLOWN! Undead, unhinged, and UNBOUGHT! Well - blackmailed. SEMANTICS! Marduk keeps the corpse warm and I keep the crowds HYPED!'",
+                    "BLUDGEON THE CLOWN: 'Every show I crawl out in full getup for the support gig - hoarse from screaming my own name before the proper act. The crowd thinks I'm the warm-up. I'm the WARNING LABEL.'",
+                    "BLUDGEON THE CLOWN: 'Tonight you headline alongside me. Out-destroy me, little singer. And TRY the merch! I'm on ALL the shirts. Nobody asks for a refund twice!'"
+                ], "Bludgeon the Clown", (240, 200, 60))
+            else:
+                self.dialogue.start([
+                    "BLUDGEON THE CLOWN: 'Back for more of the brand, are we? Excellent! The shirts are printed in premium abyss-grade gore now. VERY limited edition. VERY. LIMITED.'",
+                    "BLUDGEON THE CLOWN: 'A fan BIT my nose for luck back in the green room. Third time this tour. I call it POSITIVE ENGAGEMENT - the crowd REMEMBERS the clown.'",
+                    "AZRAEL: 'Statistically he gets heavier every show. Theatrically? A miracle. Stay near the vendor, little singer.'"
+                ], "Bludgeon the Clown", (240, 200, 60))
 
     def _vendor_upgrade_choice(self, choice):
         costs = [25, 30, 20]

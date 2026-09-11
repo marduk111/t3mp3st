@@ -130,7 +130,7 @@ To add dialogue, create new interaction handlers in the `Game` class following t
 - **`reel_after=True`**: dialogue first (with per-speaker portraits), then a **fullscreen reel phase** with no text, then the `callback` fires (typical: the battle starts). Used by every pre-battle cutscene. Room music **stops when the cutscene begins**; `reel_voice="<slot>"` (optional) plays the matching music-slot clip **once on its own channel** during the reel — it never loops and is cut off when `stop_music()` runs at battle start. A clip whose length matches the animation (~frames ÷ 30) lands in near-perfect sync (e.g. the 240-frame zombie reel is 8.0 s and the shipped `zombie.mp3` is ~7.9 s).
 - ENTER/SPACE skips the reel phase early.
 
-**Pre-battle flow today:** engage enemy → room music stops → dialogue with portraits (silent, focused) → click past the last page → fullscreen reel + one-shot voice → battle starts with the combat playlist. Each enemy type and both bosses (`beast`, `pit_lord`) have their own reel key and voice slot waiting for your clips.
+**Pre-battle flow today:** engage enemy → room music stops → dialogue with portraits (the enemy gets the first line and a mugshot, then Azrael and Marduk) → click past the last page → fullscreen reel + one-shot voice → battle starts with the combat playlist. Each enemy type and both bosses (`beast`, `pit_lord`) have their own reel key and voice slot waiting for your clips.
 
 ## Adding a New Music Slot
 
@@ -191,7 +191,7 @@ Every character, enemy, and item has a portrait that appears beside dialogue, in
 - `player.png` — Marduk, the band's singer
 - `azrael.png` — AZRAEL D DESTROYER, the band's cat-god narrator and ranged weapon
 - `zombie.png`, `corpse.png`, `shadow.png`, `demon.png`, `engineer.png`, `beast.png` — enemies
-- `roadie.png`, `last_roadie.png`, `sketchy_vendor.png` — NPCs
+- `roadie.png`, `last_roadie.png`, `sketchy_vendor.png`, `bludgeon_the_clown.png` — NPCs
 - `beer.png`, `mic.png`, `crypt_key.png`, `broken_bottle.png`, `guitaraxe.png`, `tome_double_down.png`, etc. — items (full list in **ASSET_MANIFEST.md**)
 
 Any PNG matching a portrait key replaces the placeholder automatically. Recommended size: 160x160 (any source resolution works; larger masters downscale cleanly). Keys are lowercased with spaces replaced by underscores (e.g. NPC "Last Roadie" → `last_roadie.png`).
@@ -281,15 +281,15 @@ Drop PNG/JPG files into `assets/images/`. These display as full-screen HD overla
 
 ## Combat Flavor
 
-- **Pre-battle cutscene** — each fight opens with a two-line exchange between Azrael and Marduk (with per-speaker portraits), then a fullscreen animation reel with a synced one-shot voice clip, then the battle.
+- **Pre-battle cutscene** — each fight opens with the enemy getting the first word (and their own mugshot beside it), followed by Azrael and Marduk, then a fullscreen animation reel with a synced one-shot voice clip, then the battle. Drop in `<enemy>.png` (e.g. `zombie.png`) and the foe's face shows up at the top of the fight.
 - **Victory one-liners** — every win earns an action-hero style quip, shown on the victory screen.
 - **Boss fights** — the Pit Lord's Enforcer (Mosh Pit) and the Pit Lord himself (Chamber) are **single-enemy battles** in the same stage-defense engine, scaled to a one-versus-you duel with their own name, banter, and victory lines. Beat the Beast and the ending cutscene plays.
 
 ## Rooms (7 total)
 
-1. **The Stage of Sin** — Starting area. Find the Roadie, grab gear, fight the zombie fan. The Roadie gives cryptic hints about the path deeper.
+1. **The Stage of Sin** — Starting area. Find the Roadie, meet **Bludgeon the Clown** (the band's blackmailed, unhinged promoter), grab gear, fight the zombie fan. The Roadie gives cryptic hints about the path deeper.
 2. **Backstage Gore** — Corridors of blood. A rusted door leads to the secret Green Room of Vile if you have the crypt key.
-3. **The Merch Table of Madness** — The Sketchy Vendor sells cursed items and buys your GRIT for upgrades. A demon guards the goods. The path forward goes east to the Mosh Pit.
+3. **The Merch Table of Madness** — The Sketchy Vendor sells cursed items and buys your GRIT for upgrades. Bludgeon the Clown works the room here too, chasing tour merch. A demon guards the goods. The path forward goes east to the Mosh Pit.
 4. **The Mosh Pit of Souls** — Boss arena. The Pit Lord's Enforcer blocks the way. Kill it to open the great gate to the final chamber. A north door leads to the Sound Booth.
 5. **The Green Room of Vile** — (locked, requires crypt key) A VIP side-room. The Last Roadie gives lore and a heal. Loot and get out.
 6. **The Sound Booth of Despair** — (side room off the Mosh Pit) The reanimated Sound Engineer mans the master console. Loot the **Double Down** tome and the Master Fader weapon. A west door loops back toward Backstage.
@@ -297,7 +297,7 @@ Drop PNG/JPG files into `assets/images/`. These display as full-screen HD overla
 
 ## Story
 
-The band was mid-set when the floor gave out. Now the singer is in hell, surrounded by demons that look suspiciously like venue staff. The Roadie has intel, the Vendor has gear, the Green Room has secrets, and the Pit Lord has your exit ticket. The only way out is through him. The only way forward is violence and bad decisions.
+The band was mid-set when the floor gave out. Now the singer is in hell, surrounded by demons that look suspiciously like venue staff. The Roadie has intel, the Vendor has gear, Bludgeon the Clown has the merch (and bookings — ask how he got them), the Green Room has secrets, and the Pit Lord has your exit ticket. The only way out is through him. The only way forward is violence and bad decisions.
 
 The story is told to you by **AZRAEL D DESTROYER** — the band's cat-god, the narrator who introduces himself and his abyss in the opening cutscene, the spirit who hints at you when you're stuck, and the blazing ranged weapon that streaks in at range 3 during battles.
 
