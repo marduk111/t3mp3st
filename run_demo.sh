@@ -13,13 +13,22 @@ if [ ! -x ".venv/bin/python" ]; then
   echo
   echo "First run: setting up a private environment for the game..."
   "$PY" -m venv .venv
+  if [ ! -x ".venv/bin/python" ]; then
+    echo
+    echo "Could not create a virtual environment (.venv did not appear)."
+    echo "On Debian/Ubuntu, install the venv module first:"
+    echo "  sudo apt install python3-venv"
+    echo "then re-run this script."
+    read -r -p "Press Enter to close..."
+    exit 1
+  fi
   if ! .venv/bin/python -m pip install --upgrade pip; then
     echo
     echo "Failed to install pip. Check your internet connection and re-run."
     read -r -p "Press Enter to close..."
     exit 1
   fi
-  if ! .venv/bin/python -m pip install "pygame-ce>=2.5"; then
+  if ! .venv/bin/python -m pip install -r requirements.txt; then
     echo
     echo "Failed to install pygame-ce. Check your internet connection and re-run."
     read -r -p "Press Enter to close..."

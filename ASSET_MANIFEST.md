@@ -59,13 +59,13 @@ Slots with no file fall back to procedural audio (menu/combat) or silence.
 | greenroom | greenroom.mp3 | The Green Room of Vile | missing |
 | booth | booth.mp3 | The Sound Booth of Despair | missing |
 | chamber | chamber.mp3 | The Pit Lord's Chamber | missing |
-| combat | combat.mp3 | Any normal fight | missing |
-| zombie | zombie.mp3 | Zombie Fan fight (drop your own song) | found |
-| corpse | corpse.mp3 | Reanimated Roadie fight | missing |
-| shadow | shadow.mp3 | Stage Ninja fight | missing |
-| demon | demon.mp3 | Enforcer (non-boss) fight | missing |
-| engineer | engineer.mp3 | Sound Engineer fight | missing |
-| boss | boss.mp3 | Pit Lord's Enforcer or the Beast (boss fight) | missing |
+| combat | combat.mp3 | Any normal fight (battle playlist combat1/2/3...) | missing |
+| zombie | zombie.mp3 | Zombie Fan pre-battle reel voice (plays once, layered over the room track) | found |
+| corpse | corpse.mp3 | Reanimated Roadie pre-battle reel voice (plays once, layered over the room track) | missing |
+| shadow | shadow.mp3 | Stage Ninja pre-battle reel voice (plays once, layered over the room track) | missing |
+| demon | demon.mp3 | Enforcer (non-boss) pre-battle reel voice (plays once, layered over the room track) | missing |
+| engineer | engineer.mp3 | Sound Engineer pre-battle reel voice (plays once, layered over the room track) | missing |
+| boss | boss.mp3 | Boss pre-battle reel voice (plays once, layered over the room track) | missing |
 | levelup | levelup.mp3 | LEVEL UP banner (one-shot sting) | missing |
 | discovery | discovery.mp3 | Unlocking a new ability tome (one-shot sting) | missing |
 | victory | victory.mp3 | Beast defeated (one-shot sting) | missing |
