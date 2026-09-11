@@ -901,9 +901,19 @@ class PortraitSystem:
         self.cache = {}
         os.makedirs(PORTRAITS_DIR, exist_ok=True)
 
+    def find_file(self, key):
+        key = str(key).lower().replace(" ", "_")
+        if not os.path.isdir(PORTRAITS_DIR):
+            return None
+        for name in sorted(os.listdir(PORTRAITS_DIR)):
+            base, ext = os.path.splitext(name)
+            if ext.lower() == ".png" and base.lower() == key:
+                return os.path.join(PORTRAITS_DIR, name)
+        return None
+
     def _load_file(self, key):
-        path = os.path.join(PORTRAITS_DIR, key + ".png")
-        if os.path.exists(path):
+        path = self.find_file(key)
+        if path:
             try:
                 img = pygame.image.load(path).convert_alpha()
                 return pygame.transform.smoothscale(img, self.SIZE)
@@ -2673,7 +2683,7 @@ class Game:
                 where = f"Item {label} - {room.name}"
                 rows.setdefault(key, (label, where))
         for key, (label, where) in sorted(rows.items()):
-            status = "CUSTOM" if os.path.exists(os.path.join(PORTRAITS_DIR, key + ".png")) else "PLACEHOLDER"
+            status = "CUSTOM" if portraits.find_file(key) else "PLACEHOLDER"
             lines.append(f"| {key} | {status} | {label} - {where} |")
 
         lines += ["", "## Music - key moments", "",
