@@ -47,6 +47,8 @@ Folder: `assets/portraits/`  -  File: `<key>.png` (recommended 160x160).
 
 Folder: `assets/music/`.  File: `<slot>.mp3` (or `.ogg` / `.wav`).
 Numbered variants work too: `01-stage.mp3` is the same slot as `stage.mp3`.
+Combat/boss tracks rotate through playlist files `combat1.mp3`, `combat2.mp3`, ...
+and `boss1.mp3`, `boss2.mp3`, ... so each battle airs a different song.
 Slots with no file fall back to procedural audio (menu/combat) or silence.
 
 | Slot | File | Plays when | File status |
@@ -60,13 +62,13 @@ Slots with no file fall back to procedural audio (menu/combat) or silence.
 | greenroom | greenroom.mp3 | The Green Room of Vile | missing |
 | booth | booth.mp3 | The Sound Booth of Despair | missing |
 | chamber | chamber.mp3 | The Pit Lord's Chamber | missing |
-| combat | combat.mp3 | Any normal fight (battle playlist combat1/2/3...) | missing |
+| combat | combat1.mp3, combat2.mp3, ... | Any normal fight (battle playlist combat1/2/3...) | combat1.mp3+combat2.mp3 |
 | zombie | zombie.mp3 | Zombie Fan pre-battle reel voice (room music stops; plays once) | found |
 | corpse | corpse.mp3 | Reanimated Roadie pre-battle reel voice (room music stops; plays once) | missing |
 | shadow | shadow.mp3 | Stage Ninja pre-battle reel voice (room music stops; plays once) | missing |
 | demon | demon.mp3 | Enforcer (non-boss) pre-battle reel voice (room music stops; plays once) | missing |
 | engineer | engineer.mp3 | Sound Engineer pre-battle reel voice (room music stops; plays once) | missing |
-| boss | boss.mp3 | Boss pre-battle reel voice (room music stops; plays once) | missing |
+| boss | boss1.mp3, boss2.mp3, ... | Boss pre-battle reel voice (room music stops; plays once) | missing |
 | levelup | levelup.mp3 | LEVEL UP banner (one-shot sting) | missing |
 | discovery | discovery.mp3 | Unlocking a new ability tome (one-shot sting) | missing |
 | victory | victory.mp3 | Beast defeated (one-shot sting) | missing |

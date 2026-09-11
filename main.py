@@ -6,6 +6,7 @@ import random
 import json
 import struct
 import array
+import re
 from enum import Enum, auto
 
 import battle_bridge
@@ -2678,6 +2679,8 @@ class Game:
         lines += ["", "## Music - key moments", "",
                   "Folder: `assets/music/`.  File: `<slot>.mp3` (or `.ogg` / `.wav`).",
                   "Numbered variants work too: `01-stage.mp3` is the same slot as `stage.mp3`.",
+                  "Combat/boss tracks rotate through playlist files `combat1.mp3`, `combat2.mp3`, ...",
+                  "and `boss1.mp3`, `boss2.mp3`, ... so each battle airs a different song.",
                   "Slots with no file fall back to procedural audio (menu/combat) or silence.",
                   "",
                   "| Slot | File | Plays when | File status |", "|---|---|---|---|"]
@@ -2704,9 +2707,23 @@ class Game:
             "ending": "Ending cutscene",
             "credits": "Credits roll",
         }
+        def _playlist_files(kind):
+            found = []
+            if os.path.isdir(MUSIC_DIR):
+                pat = re.compile(r"^%s(\d*)\.(mp3|ogg|wav)$" % kind, re.I)
+                for f in sorted(os.listdir(MUSIC_DIR)):
+                    if pat.match(f):
+                        found.append(f)
+            return found
+
         for slot in SoundManager.MUSIC_SLOTS:
-            file_status = "found" if slot in sound.slots else "missing"
-            lines.append(f"| {slot} | {slot}.mp3 | {moment.get(slot, slot)} | {file_status} |")
+            if slot in ("combat", "boss"):
+                files = _playlist_files(slot)
+                status = "+".join(sorted(files, key=lambda f: (int(re.sub(r"\D", "", f) or 0), f))) if files else "missing"
+                lines.append(f"| {slot} | {slot}1.mp3, {slot}2.mp3, ... | {moment.get(slot, slot)} | {status} |")
+            else:
+                file_status = "found" if slot in sound.slots else "missing"
+                lines.append(f"| {slot} | {slot}.mp3 | {moment.get(slot, slot)} | {file_status} |")
 
         lines += ["", "## Animations (short reels)", "",
                   "Folder: `assets/animations/<key>/`. Frames: `0001.png`, `0002.png`, ...",
