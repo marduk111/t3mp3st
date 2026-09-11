@@ -362,14 +362,17 @@ class SoundManager:
         self.sfx_cache = {}
         self.music_channel = None
         self.jingle_channel = None
+        self.voice_channel = None
         self.using_external = False
 
         try:
             pygame.mixer.set_num_channels(8)
             self.music_channel = pygame.mixer.Channel(0)
             self.jingle_channel = pygame.mixer.Channel(1)
+            self.voice_channel = pygame.mixer.Channel(2)
         except Exception:
             self.jingle_channel = None
+            self.voice_channel = None
 
         self._generate_sfx()
         self._generate_music_loops()
@@ -511,6 +514,36 @@ class SoundManager:
         except Exception:
             pass
 
+    def play_voice(self, slot):
+        """Play a music-slot file exactly ONCE, layered over whatever track is
+        already playing (it never touches pygame.mixer.music, so ambient stays).
+        Used to sync a clip with an animation reel (e.g. the zombie clip during
+        the pre-battle reel). A new call or stop_voice() cuts it off."""
+        if self.muted or not self.voice_channel:
+            return
+        path = self.slots.get(slot)
+        if not path:
+            return
+        snd = self.jingle_cache.get(slot)
+        if snd is None:
+            try:
+                snd = pygame.mixer.Sound(path)
+            except Exception:
+                return
+            self.jingle_cache[slot] = snd
+        try:
+            self.voice_channel.set_volume(self.music_volume)
+            self.voice_channel.play(snd)
+        except Exception:
+            pass
+
+    def stop_voice(self):
+        if self.voice_channel is not None:
+            try:
+                self.voice_channel.stop()
+            except Exception:
+                pass
+
     def current_track_name(self):
         if self.ambient_slot:
             path = self.slots.get(self.ambient_slot)
@@ -532,6 +565,7 @@ class SoundManager:
     def stop_music(self):
         pygame.mixer.music.stop()
         self._stop_procedural()
+        self.stop_voice()
         self.ambient_slot = None
 
     def play_sfx(self, name):
@@ -1930,9 +1964,16 @@ class CutsceneSystem:
         self.portrait_label = ""
         self.reel = None
         self.reel_lines = set()
+        self.reel_after = False
+        self.reel_voice = ""
+        self.reel_phase = False
+        self.portrait_map = {}
+        self._stripped = []
+        self._speakers = []
 
     def start(self, lines, bg_color=(5, 0, 0), callback=None, portrait=None, label="",
-              reel_key="", reel_lines=(), reel_placeholder=True):
+              reel_key="", reel_lines=(), reel_placeholder=True,
+              reel_after=False, reel_voice="", portrait_map=None):
         self.active = True
         self.lines = lines
         self.current = 0
@@ -1943,19 +1984,69 @@ class CutsceneSystem:
         self.portrait_img = portraits.get(portrait) if portrait else None
         self.portrait_label = label
         self.reel_lines = set(reel_lines)
+        self.reel_after = reel_after
+        self.reel_voice = reel_voice
+        self.reel_phase = False
+        self.portrait_map = portrait_map or {}
+        self._stripped = []
+        self._speakers = []
+        if self.portrait_map:
+            for line in lines:
+                text, speaker = self._strip_speaker(line)
+                self._stripped.append(text)
+                self._speakers.append(speaker)
+        else:
+            self._stripped = list(lines)
+            self._speakers = [None] * len(lines)
         if reel_key:
             self.reel = Reel(reel_key, placeholder=reel_placeholder)
             self.reel.preload()
             self.reel.reset()
         else:
             self.reel = None
+        if reel_after and self.reel is not None and self.reel.duration() > 0:
+            self.reel.reset()
+
+    @staticmethod
+    def _strip_speaker(line):
+        upper = line.upper()
+        for prefix in ("AZRAEL:", "MARDUK:", "PIT LORD:", "ZOMBIE FAN:"):
+            if upper.startswith(prefix):
+                return line[len(prefix):].lstrip(" '"), prefix[:-1]
+        return line, None
+
+    def _shown_line(self):
+        text = self._stripped[self.current]
+        if self.char_index < len(text):
+            return text[:self.char_index]
+        return text
+
+    def _current_speaker_portrait(self):
+        speaker = self._speakers[self.current]
+        if speaker:
+            entry = self.portrait_map.get(speaker)
+            if entry:
+                key, label = entry
+                return portraits.get(key), label
+        return self.portrait_img, self.portrait_label
+
+    def _finish(self):
+        self.active = False
+        self.reel_phase = False
+        if self.callback:
+            self.callback()
 
     def update(self):
         if not self.active:
             return
         self.timer += 1
+        if self.reel_phase:
+            self.reel.advance()
+            if self.reel.tick >= self.reel.duration():
+                self._finish()
+            return
         if self.timer % 2 == 0:
-            if self.char_index < len(self.lines[self.current]):
+            if self.char_index < len(self._stripped[self.current]):
                 self.char_index += 1
         if self.reel is not None and self.current in self.reel_lines:
             self.reel.advance()
@@ -1965,40 +2056,55 @@ class CutsceneSystem:
             return
         if event.type == pygame.KEYDOWN:
             if event.key in (pygame.K_RETURN, pygame.K_SPACE):
-                if self.char_index < len(self.lines[self.current]):
-                    self.char_index = len(self.lines[self.current])
+                if self.reel_phase:
+                    self._finish()
+                    return
+                if self.char_index < len(self._stripped[self.current]):
+                    self.char_index = len(self._stripped[self.current])
                 else:
                     self.current += 1
                     self.char_index = 0
                     if self.current >= len(self.lines):
-                        self.active = False
-                        if self.callback:
-                            self.callback()
+                        if (self.reel_after and self.reel is not None
+                                and self.reel.duration() > 0):
+                            self.reel_phase = True
+                            self.reel.reset()
+                            if self.reel_voice:
+                                sound.play_voice(self.reel_voice)
+                        else:
+                            self._finish()
 
     def render(self, surface):
         if not self.active:
             return
         surface.fill(self.bg_color)
+        if self.reel_phase:
+            f = self.reel.frame() if self.reel is not None else None
+            if f is not None:
+                surface.blit(f, (0, 0))
+            hint = fonts.render_small("[ENTER] skip", (110, 110, 110))
+            surface.blit(hint, (SCREEN_W - hint.get_width() - 12, SCREEN_H - 26))
+            return
         if self.reel is not None and self.current in self.reel_lines:
             f = self.reel.frame()
             if f is not None:
                 surface.blit(f, (0, 0))
         text_y = SCREEN_H // 2 - 20
-        if self.portrait_img:
-            px = SCREEN_W // 2 - self.portrait_img.get_width() // 2
+        portrait_img, portrait_label = self._current_speaker_portrait()
+        if portrait_img:
+            px = SCREEN_W // 2 - portrait_img.get_width() // 2
             py = 40
-            surface.blit(self.portrait_img, (px, py))
-            if self.portrait_label:
-                lb = fonts.render(self.portrait_label, (200, 120, 50), big=True)
-                surface.blit(lb, (SCREEN_W // 2 - lb.get_width() // 2, py + self.portrait_img.get_height() + 4))
-            text_y = py + self.portrait_img.get_height() + 60
-        full = self.char_index >= len(self.lines[self.current])
-        display = self.lines[self.current] if full else self.lines[self.current][:self.char_index]
+            surface.blit(portrait_img, (px, py))
+            if portrait_label:
+                lb = fonts.render(portrait_label, (200, 120, 50), big=True)
+                surface.blit(lb, (SCREEN_W // 2 - lb.get_width() // 2, py + portrait_img.get_height() + 4))
+            text_y = py + portrait_img.get_height() + 60
+        full = self.char_index >= len(self._stripped[self.current])
         if full:
-            ts = fonts.render_wrapped(display, (200, 200, 200), big=True,
+            ts = fonts.render_wrapped(self._shown_line(), (200, 200, 200), big=True,
                                       max_width=SCREEN_W - 120)
         else:
-            ts = fonts.render(display, (200, 200, 200), big=True)
+            ts = fonts.render(self._shown_line(), (200, 200, 200), big=True)
         surface.blit(ts, (SCREEN_W // 2 - ts.get_width() // 2, text_y))
         if full:
             hint = fonts.render_small("[ENTER]", (100, 100, 100))
@@ -2671,10 +2777,15 @@ class Game:
                     "MARDUK: 'Warm-up's over.'",
                 ],
             }
-            sound.play_ambient("boss", force=True)
+            sound.stop_voice()
             self.cutscene.start(beat_lines[key], bg_color=(24, 2, 2),
                                 callback=self._start_pending_battle,
-                                reel_key=key, reel_lines=(0, 1), reel_placeholder=False)
+                                reel_key=key, reel_placeholder=False,
+                                reel_after=True, reel_voice="boss",
+                                portrait_map={
+                                    "AZRAEL": ("azrael", "AZRAEL D DESTROYER"),
+                                    "MARDUK": ("player", "MARDUK"),
+                                })
             self.state = GameState.CUTSCENE
             return
 
@@ -2703,10 +2814,15 @@ class Game:
         }
         key = target.get("type", "")
         if key in pre_battle_lines and key in REEL_MOMENTS:
-            sound.play_ambient(key, force=True)
+            sound.stop_voice()
             self.cutscene.start(pre_battle_lines[key], bg_color=(16, 4, 12),
                                 callback=self._start_pending_battle,
-                                reel_key=key, reel_lines=(0, 1), reel_placeholder=False)
+                                reel_key=key, reel_placeholder=False,
+                                reel_after=True, reel_voice=key,
+                                portrait_map={
+                                    "AZRAEL": ("azrael", "AZRAEL D DESTROYER"),
+                                    "MARDUK": ("player", "MARDUK"),
+                                })
             self.state = GameState.CUTSCENE
             return
         self._pending_battle = None
