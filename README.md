@@ -157,13 +157,20 @@ mkdir assets\animations\<key>
 ffmpeg -i myclip.mp4 -vf "fps=30,scale=1024:768:flags=lanczos" assets\animations\<key>\%04d.png
 ```
 
+For a portrait clip, swap the dimensions (keeps the video's native aspect):
+
+```
+mkdir assets\animations\<key>
+ffmpeg -i myclip.mp4 -vf "fps=30,scale=768:1024:flags=lanczos" assets\animations\<key>\%04d.png
+```
+
 The animation frames carry no sound, so also extract the MP4's audio track as the reel-voice clip (this is what `zombie.mp3` is — the audio that came with the video, restored):
 
 ```
 ffmpeg -i myclip.mp4 -vn assets\music\<key>.mp3
 ```
 
-`<key>` is any moment from the Animations table below. Frames are read in numeric order (`0001.png`, `0002.png`, ...) and played one per tick at 30 FPS. Omit `scale=1024:768:flags=lanczos` to keep the source size — the game auto-stretches whatever you give it. Since the frames run at 30 FPS (one per tick), a video exported at 30 fps plays at 1:1 speed and its audio lines up with the reel on its own.
+`<key>` is any moment from the Animations table below. Frames are read in numeric order (`0001.png`, `0002.png`, ...) and played one per tick at 30 FPS. Landscape 1024x768 frames are pixel-perfect full-screen; portrait frames (or any other size) are cover-fitted — scaled to fill the screen with the overflow cropped, so nothing is distorted. Since the frames run at 30 FPS (one per tick), a video exported at 30 fps plays at 1:1 speed and its audio lines up with the reel on its own.
 
 ## Sharing with Testers
 
@@ -245,7 +252,7 @@ The engine's recommended path for short authored clips is **PNG frame sequences,
 
 1. Build your animation in any tool that can export a PNG sequence (CapCut, After Effects, piskel, ffmpeg, even a script). Keep it **2–5 seconds**. Already have an MP4? The **Converting MP4 to Animation Frames** section below also extracts its audio as the reel-voice clip.
 2. Export as numbered frames into `assets/animations/<key>/` — e.g. `assets/animations/beast/0001.png`, `0002.png`, ... Any numeric filename works (`1.png`, `01.png`, `0001.png`); the game sorts them **numerically** and ignores non-images.
-3. Make frames **1024x768** for pixel-perfect full-screen scenes. Different sizes are auto-stretched to fill the screen.
+3. Frames can be **landscape (1024x768)** or **portrait (768x1024)**. The engine cover-fits them to the whole screen — scaled up until they fill the window, overflow cropped from top/bottom (portrait) or left/right (landscape) — so nothing is ever squished. For pixel-perfect full-screen landscape scenes, use exactly **1024x768**.
 4. The game plays **one frame per tick at 30 FPS**, so export at **30 fps** for 1:1 timing (a 3-second clip = 90 frames).
 5. **Audio is optional and per-beat.** Intro-beat reels (fall, chamber, ending) keep whatever music is already playing underneath. Pre-battle reels (zombie, corpse, ..., boss) stop the room music when the cutscene starts and play a **one-shot reel-voice clip** from the matching music slot — its own soundtrack, restored. Drop the audio the video was stripped of at `assets/music/<key>.mp3` (or `.ogg`). It starts in sync with the reel, runs once on its own channel (nothing else playing), and stops at battle start. Match the clip length to the animation for a perfect landing (e.g. 240 frames ÷ 30 = 8.0 s ≈ `zombie.mp3`).
 6. Launch once and check **`ASSET_MANIFEST.md`**: the **Animations** table lists every key with its live frame count and `READY (N frames)` vs `NO FRAMES` status.

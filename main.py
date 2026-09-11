@@ -1873,7 +1873,7 @@ class Reel:
 
     def preload(self):
         if self.frame_paths and not self.frames:
-            target = (SCREEN_W, SCREEN_H)
+            target_w, target_h = SCREEN_W, SCREEN_H
             for p in self.frame_paths:
                 try:
                     img = pygame.image.load(p)
@@ -1881,8 +1881,17 @@ class Reel:
                         img = img.convert()
                     except pygame.error:
                         pass
-                    if img.get_size() != target:
-                        img = pygame.transform.scale(img, target)
+                    sw, sh = img.get_size()
+                    if (sw, sh) != (target_w, target_h):
+                        # Cover-fit: scale up to fill the whole screen (no
+                        # distortion), then crop the overflow centered.
+                        scale = max(target_w / sw, target_h / sh)
+                        nw = max(1, int(round(sw * scale)))
+                        nh = max(1, int(round(sh * scale)))
+                        img = pygame.transform.scale(img, (nw, nh))
+                        ox = max(0, (nw - target_w) // 2)
+                        oy = max(0, (nh - target_h) // 2)
+                        img = img.subsurface((ox, oy, target_w, target_h)).copy()
                     self.frames.append(img)
                 except Exception:
                     continue
@@ -2595,7 +2604,8 @@ class Game:
         lines += ["", "## Animations (short reels)", "",
                   "Folder: `assets/animations/<key>/`. Frames: `0001.png`, `0002.png`, ...",
                   "(any numbered name, sorted numerically), played one per engine tick at 30 FPS.",
-                  "Exact 1024x768 frames recommended; other sizes are stretched to fill the screen.",
+                  "Exact 1024x768 frames recommended; portrait frames are cover-fitted (cropped",
+                  "top/bottom) to fill the screen without distortion.",
                   "Moments with no frames fall back to a plain cutscene (the intro 'fall' and",
                   "'azrael_intro' beats use built-in procedural placeholder scenes so you can",
                   "see how they work before real art exists).",

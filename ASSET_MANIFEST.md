@@ -76,7 +76,8 @@ Slots with no file fall back to procedural audio (menu/combat) or silence.
 
 Folder: `assets/animations/<key>/`. Frames: `0001.png`, `0002.png`, ...
 (any numbered name, sorted numerically), played one per engine tick at 30 FPS.
-Exact 1024x768 frames recommended; other sizes are stretched to fill the screen.
+Exact 1024x768 frames recommended; portrait frames are cover-fitted (cropped
+top/bottom) to fill the screen without distortion.
 Moments with no frames fall back to a plain cutscene (the intro 'fall' and
 'azrael_intro' beats use built-in procedural placeholder scenes so you can
 see how they work before real art exists).
