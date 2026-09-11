@@ -230,6 +230,7 @@ The engine's recommended path for short authored clips is **PNG frame sequences,
 | Key | Plays when | With no frames |
 |-----|------------|----------------|
 | `fall` | Opening cutscene: the stage gives way under Marduk | Built-in procedural fall scene (always visible out-of-the-box) |
+| `azrael_intro` | Opening cutscene: AZRAEL's kung fu show during his self-intro | Built-in procedural placeholder scene (until you add frames) |
 | `chamber` | Entering the Pit Lord's Chamber for the first time | Plain text cutscene |
 | `pit_lord` | Right before the Enforcer boss fight | Plain text banter cutscene |
 | `beast` | Right before the final battle with the Pit Lord | Plain text banter cutscene |

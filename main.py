@@ -61,6 +61,7 @@ for _dir in (MUSIC_DIR, IMAGES_DIR, PORTRAITS_DIR, ANIM_DIR):
 # (the intro's "fall" beat ships with a built-in procedural placeholder).
 REEL_MOMENTS = {
     "fall": "Opening cutscene: the stage gives way under Marduk",
+    "azrael_intro": "Opening cutscene: AZRAEL's kung fu show during his self-intro",
     "chamber": "Entering the Pit Lord's Chamber for the first time",
     "pit_lord": "Right before the Enforcer boss fight",
     "beast": "Right before the final battle with the Pit Lord",
@@ -1963,6 +1964,7 @@ class CutsceneSystem:
         self.portrait_img = None
         self.portrait_label = ""
         self.reel = None
+        self.reel_segments = []
         self.reel_lines = set()
         self.reel_after = False
         self.reel_voice = ""
@@ -1973,7 +1975,7 @@ class CutsceneSystem:
 
     def start(self, lines, bg_color=(5, 0, 0), callback=None, portrait=None, label="",
               reel_key="", reel_lines=(), reel_placeholder=True,
-              reel_after=False, reel_voice="", portrait_map=None):
+              reel_after=False, reel_voice="", portrait_map=None, reel_plan=None):
         self.active = True
         self.lines = lines
         self.current = 0
@@ -1998,12 +2000,24 @@ class CutsceneSystem:
         else:
             self._stripped = list(lines)
             self._speakers = [None] * len(lines)
-        if reel_key:
+        if reel_plan:
+            self.reel_segments = []
+            for start_line, end_line, key in reel_plan:
+                r = Reel(key, placeholder=reel_placeholder)
+                r.preload()
+                r.reset()
+                self.reel_segments.append((start_line, end_line, r))
+            self.reel = None
+            self.reel_lines = set()
+            self.current_reel_index = 0
+        elif reel_key:
             self.reel = Reel(reel_key, placeholder=reel_placeholder)
             self.reel.preload()
             self.reel.reset()
+            self.reel_segments = []
         else:
             self.reel = None
+            self.reel_segments = []
         if reel_after and self.reel is not None and self.reel.duration() > 0:
             self.reel.reset()
 
@@ -2030,6 +2044,14 @@ class CutsceneSystem:
                 return portraits.get(key), label
         return self.portrait_img, self.portrait_label
 
+    def _active_reel(self):
+        if self.reel_segments:
+            for start_line, end_line, r in self.reel_segments:
+                if start_line <= self.current <= end_line:
+                    return r
+            return None
+        return self.reel
+
     def _finish(self):
         self.active = False
         self.reel_phase = False
@@ -2048,8 +2070,9 @@ class CutsceneSystem:
         if self.timer % 2 == 0:
             if self.char_index < len(self._stripped[self.current]):
                 self.char_index += 1
-        if self.reel is not None and self.current in self.reel_lines:
-            self.reel.advance()
+        active = self._active_reel()
+        if active is not None:
+            active.advance()
 
     def handle_input(self, event):
         if not self.active:
@@ -2085,8 +2108,9 @@ class CutsceneSystem:
             hint = fonts.render_small("[ENTER] skip", (110, 110, 110))
             surface.blit(hint, (SCREEN_W - hint.get_width() - 12, SCREEN_H - 26))
             return
-        if self.reel is not None and self.current in self.reel_lines:
-            f = self.reel.frame()
+        active = self._active_reel()
+        if active is not None:
+            f = active.frame()
             if f is not None:
                 surface.blit(f, (0, 0))
         text_y = SCREEN_H // 2 - 20
@@ -2474,7 +2498,7 @@ class Game:
             "Now go warm up the strings. The encore is going to be loud.",
         ], bg_color=(16, 4, 12), callback=self.after_intro,
             portrait="azrael", label="AZRAEL D DESTROYER",
-            reel_key="fall", reel_lines=(6, 7))
+            reel_plan=[(0, 3, "azrael_intro"), (6, 7, "fall")])
 
     def after_intro(self):
         self.state = GameState.PLAYING
@@ -2572,8 +2596,9 @@ class Game:
                   "Folder: `assets/animations/<key>/`. Frames: `0001.png`, `0002.png`, ...",
                   "(any numbered name, sorted numerically), played one per engine tick at 30 FPS.",
                   "Exact 1024x768 frames recommended; other sizes are stretched to fill the screen.",
-                  "Moments with no frames fall back to a plain cutscene (the intro 'fall' beat uses a",
-                  "built-in procedural placeholder scene so you can see how it works).",
+                  "Moments with no frames fall back to a plain cutscene (the intro 'fall' and",
+                  "'azrael_intro' beats use built-in procedural placeholder scenes so you can",
+                  "see how they work before real art exists).",
                   "",
                   "| Key | Plays when | Frames found |", "|---|---|---|"]
         for key, when in REEL_MOMENTS.items():
@@ -2586,8 +2611,8 @@ class Game:
                         frames += 1
             if frames:
                 status = "READY (%d frames)" % frames
-            elif key == "fall":
-                status = "NO FRAMES - procedural fallback scene"
+            elif key in ("fall", "azrael_intro"):
+                status = "NO FRAMES - procedural placeholder scene"
             else:
                 status = "NO FRAMES - text-only"
             lines.append(f"| {key} | {when} | {status} |")

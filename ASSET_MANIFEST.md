@@ -77,12 +77,14 @@ Slots with no file fall back to procedural audio (menu/combat) or silence.
 Folder: `assets/animations/<key>/`. Frames: `0001.png`, `0002.png`, ...
 (any numbered name, sorted numerically), played one per engine tick at 30 FPS.
 Exact 1024x768 frames recommended; other sizes are stretched to fill the screen.
-Moments with no frames fall back to a plain cutscene (the intro 'fall' beat uses a
-built-in procedural placeholder scene so you can see how it works).
+Moments with no frames fall back to a plain cutscene (the intro 'fall' and
+'azrael_intro' beats use built-in procedural placeholder scenes so you can
+see how they work before real art exists).
 
 | Key | Plays when | Frames found |
 |---|---|---|
 | fall | Opening cutscene: the stage gives way under Marduk | READY (300 frames) |
+| azrael_intro | Opening cutscene: AZRAEL's kung fu show during his self-intro | NO FRAMES - procedural placeholder scene |
 | chamber | Entering the Pit Lord's Chamber for the first time | NO FRAMES - text-only |
 | pit_lord | Right before the Enforcer boss fight | NO FRAMES - text-only |
 | beast | Right before the final battle with the Pit Lord | NO FRAMES - text-only |
