@@ -236,8 +236,8 @@ The engine's recommended path for short authored clips is **PNG frame sequences,
 
 | Key | Plays when | With no frames |
 |-----|------------|----------------|
-| `fall` | Opening cutscene: the stage gives way under Marduk | Built-in procedural fall scene (always visible out-of-the-box) |
-| `azrael_intro` | Opening cutscene: AZRAEL's kung fu show during his self-intro | Built-in procedural placeholder scene (until you add frames) |
+| `fall` | Opening cutscene: fullscreen reel (stage gives way) between dialogue lines | Built-in procedural fall scene (always visible out-of-the-box) |
+| `azrael_intro` | Opening cutscene: fullscreen AZRAEL kung fu reel between dialogue lines | Built-in procedural placeholder scene (until you add frames) |
 | `chamber` | Entering the Pit Lord's Chamber for the first time | Plain text cutscene |
 | `pit_lord` | Right before the Enforcer boss fight | Plain text banter cutscene |
 | `beast` | Right before the final battle with the Pit Lord | Plain text banter cutscene |
@@ -254,10 +254,13 @@ The engine's recommended path for short authored clips is **PNG frame sequences,
 2. Export as numbered frames into `assets/animations/<key>/` — e.g. `assets/animations/beast/0001.png`, `0002.png`, ... Any numeric filename works (`1.png`, `01.png`, `0001.png`); the game sorts them **numerically** and ignores non-images.
 3. Frames can be **landscape (1024x768)** or **portrait (768x1024)**. The engine cover-fits them to the whole screen — scaled up until they fill the window, overflow cropped from top/bottom (portrait) or left/right (landscape) — so nothing is ever squished. For pixel-perfect full-screen landscape scenes, use exactly **1024x768**.
 4. The game plays **one frame per tick at 30 FPS**, so export at **30 fps** for 1:1 timing (a 3-second clip = 90 frames).
-5. **Audio is optional and per-beat.** Intro-beat reels (fall, chamber, ending) keep whatever music is already playing underneath. Pre-battle reels (zombie, corpse, ..., boss) stop the room music when the cutscene starts and play a **one-shot reel-voice clip** from the matching music slot — its own soundtrack, restored. Drop the audio the video was stripped of at `assets/music/<key>.mp3` (or `.ogg`). It starts in sync with the reel, runs once on its own channel (nothing else playing), and stops at battle start. Match the clip length to the animation for a perfect landing (e.g. 240 frames ÷ 30 = 8.0 s ≈ `zombie.mp3`).
-6. Launch once and check **`ASSET_MANIFEST.md`**: the **Animations** table lists every key with its live frame count and `READY (N frames)` vs `NO FRAMES` status.
+5. **Audio is optional and per-beat.** Intro-beat reels (fall, azrael_intro, chamber, ending) keep whatever music is already playing underneath. Pre-battle reels (zombie, corpse, ..., boss) stop the room music when the cutscene starts and play a **one-shot reel-voice clip** from the matching music slot — its own soundtrack, restored. Drop the audio the video was stripped of at `assets/music/<key>.mp3` (or `.ogg`). It starts in sync with the reel, runs once on its own channel (nothing else playing), and stops at battle start. Match the clip length to the animation for a perfect landing (e.g. 240 frames ÷ 30 = 8.0 s ≈ `zombie.mp3`).
+6. **Intro reels play fullscreen between dialogue lines.** The opening cutscene (and any cutscene wired with `reel_breaks`) shows a dialogue line with its portrait, cuts to the reel on its own — fullscreen, nothing on top — then returns to the next dialogue line. ENTER skips a reel early.
+7. Launch once and check **`ASSET_MANIFEST.md`**: the **Animations** table lists every key with its live frame count and `READY (N frames)` vs `NO FRAMES` status.
 
-Frames load once into memory (no runtime video decoding, no new dependencies). Missing folders simply fall back to the cutscene shown in the table above — the same fallback rule as portraits and music.
+**Performance (streaming):** reels no longer load every frame up front. Frames are decoded on demand at a reduced internal resolution (75% per axis) into a small window around the playhead — prefetched a few frames ahead, dropped well behind — so a 300-frame clip costs the same memory as a 30-frame one, and cutscenes start instantly instead of pausing to decode the whole animation. The reduced frames are smooth-scaled up to fill the screen at draw time (cover-fit, cropping overflow so nothing is distorted).
+
+Frames are read from disk at 30 FPS during playback; audio clips are preloaded once so they never stutter. Missing folders simply fall back to the cutscene shown in the table above — the same fallback rule as portraits and music.
 
 ### HD Images
 

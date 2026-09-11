@@ -60,8 +60,8 @@ for _dir in (MUSIC_DIR, IMAGES_DIR, PORTRAITS_DIR, ANIM_DIR):
 # assets/animations/<key>/. Moments with no frames fall back to text-only
 # (the intro's "fall" beat ships with a built-in procedural placeholder).
 REEL_MOMENTS = {
-    "fall": "Opening cutscene: the stage gives way under Marduk",
-    "azrael_intro": "Opening cutscene: AZRAEL's kung fu show during his self-intro",
+    "fall": "Opening cutscene: fullscreen reel (stage gives way) between dialogue lines",
+    "azrael_intro": "Opening cutscene: fullscreen AZRAEL kung fu reel between dialogue lines",
     "chamber": "Entering the Pit Lord's Chamber for the first time",
     "pit_lord": "Right before the Enforcer boss fight",
     "beast": "Right before the final battle with the Pit Lord",
@@ -1829,9 +1829,22 @@ class Reel:
     """Short authored clip player. Looks for PNG/JPG frame sequences in
     `assets/animations/<key>/NNNN.png` and plays them at one frame per engine
     tick (30 FPS). With no frames present and `placeholder=True`, draws a
-    procedural scene so the beat is visible before real art exists."""
+    procedural scene so the beat is visible before real art exists.
+
+    Frames are decoded lazily at a reduced internal resolution and kept in a
+    small window around the playhead (prefetched ahead, pruned behind), so
+    long reels cost a fixed amount of memory and cutscenes no longer pause to
+    decode every frame up front. The reduced frame is smooth-scaled up at blit
+    time."""
 
     PROC_TICKS = 90  # 3 seconds of the placeholder scene at FPS 30
+
+    # Internal decode resolution, as a fraction of the full screen. Lower =
+    # faster loads, less memory, and a softer upscale. 1.0 = pixel-perfect.
+    RENDER_SCALE = 0.75
+    PREFETCH = 18          # frames decoded ahead of the playhead
+    KEEP_BEHIND = 4        # frames kept behind the playhead before pruning
+    PREFILL_PER_TICK = 2   # frames decoded per engine tick (keeps ticks short)
 
     # (x, phase, speed, palette-index) so the embers are deterministic and cheap
     EMBERS = [(x, (k * 0.17 + x * 0.013) % 1.0, 0.5 + (k % 3) * 0.28, k % 4)
@@ -1841,8 +1854,11 @@ class Reel:
         self.key = key
         self.placeholder = placeholder
         self.frame_paths = []
-        self.frames = []
+        self.frames = {}
         self.tick = 0
+        self._decoded = -1
+        self._work = (int(SCREEN_W * self.RENDER_SCALE),
+                      int(SCREEN_H * self.RENDER_SCALE))
         self._gradient = None
         self._flash = None
         if key:
@@ -1851,7 +1867,8 @@ class Reel:
     def load(self, key):
         self.key = key
         self.frame_paths = []
-        self.frames = []
+        self.frames = {}
+        self._decoded = -1
         folder = os.path.join(ANIM_DIR, key)
         if os.path.isdir(folder):
             names = []
@@ -1871,30 +1888,14 @@ class Reel:
     def is_placeholder(self):
         return not self.frame_paths
 
+    def total_frames(self):
+        return len(self.frame_paths)
+
     def preload(self):
-        if self.frame_paths and not self.frames:
-            target_w, target_h = SCREEN_W, SCREEN_H
-            for p in self.frame_paths:
-                try:
-                    img = pygame.image.load(p)
-                    try:
-                        img = img.convert()
-                    except pygame.error:
-                        pass
-                    sw, sh = img.get_size()
-                    if (sw, sh) != (target_w, target_h):
-                        # Cover-fit: scale up to fill the whole screen (no
-                        # distortion), then crop the overflow centered.
-                        scale = max(target_w / sw, target_h / sh)
-                        nw = max(1, int(round(sw * scale)))
-                        nh = max(1, int(round(sh * scale)))
-                        img = pygame.transform.scale(img, (nw, nh))
-                        ox = max(0, (nw - target_w) // 2)
-                        oy = max(0, (nh - target_h) // 2)
-                        img = img.subsurface((ox, oy, target_w, target_h)).copy()
-                    self.frames.append(img)
-                except Exception:
-                    continue
+        # Lightweight: decode only the first frame so the clip can start
+        # instantly; the rest stream in via prefill() during dialogue/play.
+        if self.frame_paths and 0 not in self.frames:
+            self._decode(0)
 
     def reset(self):
         self.tick = 0
@@ -1903,14 +1904,68 @@ class Reel:
         self.tick += 1
 
     def duration(self):
-        return len(self.frames) if self.frames else (self.PROC_TICKS if self.placeholder else 0)
+        return self.total_frames() if self.frame_paths else (
+            self.PROC_TICKS if self.placeholder else 0)
+
+    def prefill(self, budget=None):
+        # Decode a few frames ahead of the playhead each call, then drop
+        # frames well behind it so memory stays bounded for any reel length.
+        if not self.frame_paths:
+            return
+        if budget is None:
+            budget = self.PREFILL_PER_TICK
+        limit = min(self.tick + self.PREFETCH, self.total_frames() - 1)
+        while budget > 0 and self._decoded < limit:
+            self._decoded += 1
+            self._decode(self._decoded)
+            budget -= 1
+        self._prune()
+
+    def _prune(self):
+        if not self.frames:
+            return
+        lo = self.tick - self.KEEP_BEHIND
+        for k in [k for k in self.frames if k < lo]:
+            del self.frames[k]
+
+    def _decode(self, idx):
+        try:
+            img = pygame.image.load(self.frame_paths[idx])
+            try:
+                img = img.convert()
+            except pygame.error:
+                pass
+            tw, th = self._work
+            sw, sh = img.get_size()
+            if (sw, sh) != (tw, th):
+                # Cover-fit: scale up to fill the whole working size (no
+                # distortion), then crop the overflow centered.
+                scale = max(tw / sw, th / sh)
+                nw, nh = max(1, int(round(sw * scale))), max(1, int(round(sh * scale)))
+                img = pygame.transform.scale(img, (nw, nh))
+                ox, oy = max(0, (nw - tw) // 2), max(0, (nh - th) // 2)
+                img = img.subsurface((ox, oy, tw, th)).copy()
+            self.frames[idx] = img
+        except Exception:
+            pass
 
     def frame(self):
-        if self.frames:
-            return self.frames[min(self.tick, len(self.frames) - 1)]
+        if self.frame_paths:
+            idx = min(self.tick, self.total_frames() - 1)
+            if idx not in self.frames:
+                self._decode(idx)
+            return self.frames.get(idx)
         if self.placeholder:
             return self._procedural_frame()
         return None
+
+    def blit(self, surface, pos=(0, 0)):
+        f = self.frame()
+        if f is None:
+            return
+        if f.get_size() != surface.get_size():
+            f = pygame.transform.smoothscale(f, surface.get_size())
+        surface.blit(f, pos)
 
     def _procedural_frame(self):
         if self._gradient is None:
@@ -1978,13 +2033,16 @@ class CutsceneSystem:
         self.reel_after = False
         self.reel_voice = ""
         self.reel_phase = False
+        self.reel_breaks = {}
+        self._break_resume = False
         self.portrait_map = {}
         self._stripped = []
         self._speakers = []
 
     def start(self, lines, bg_color=(5, 0, 0), callback=None, portrait=None, label="",
               reel_key="", reel_lines=(), reel_placeholder=True,
-              reel_after=False, reel_voice="", portrait_map=None, reel_plan=None):
+              reel_after=False, reel_voice="", portrait_map=None, reel_plan=None,
+              reel_breaks=None):
         self.active = True
         self.lines = lines
         self.current = 0
@@ -1998,6 +2056,7 @@ class CutsceneSystem:
         self.reel_after = reel_after
         self.reel_voice = reel_voice
         self.reel_phase = False
+        self._break_resume = False
         self.portrait_map = portrait_map or {}
         self._stripped = []
         self._speakers = []
@@ -2027,6 +2086,13 @@ class CutsceneSystem:
         else:
             self.reel = None
             self.reel_segments = []
+        self.reel_breaks = {}
+        if reel_breaks:
+            for line_idx, key in reel_breaks.items():
+                br = Reel(key, placeholder=reel_placeholder)
+                br.preload()
+                br.reset()
+                self.reel_breaks[line_idx] = br
         if reel_after and self.reel is not None and self.reel.duration() > 0:
             self.reel.reset()
 
@@ -2059,11 +2125,14 @@ class CutsceneSystem:
                 if start_line <= self.current <= end_line:
                     return r
             return None
-        return self.reel
+        if self.reel is not None and self.current in self.reel_lines:
+            return self.reel
+        return None
 
     def _finish(self):
         self.active = False
         self.reel_phase = False
+        self._break_resume = False
         if self.callback:
             self.callback()
 
@@ -2072,9 +2141,16 @@ class CutsceneSystem:
             return
         self.timer += 1
         if self.reel_phase:
-            self.reel.advance()
-            if self.reel.tick >= self.reel.duration():
-                self._finish()
+            if self.reel is not None:
+                self.reel.advance()
+                self.reel.prefill()
+                if self.reel.tick >= self.reel.duration():
+                    if self._break_resume:
+                        self.reel_phase = False
+                        self._break_resume = False
+                        self.reel = None
+                    else:
+                        self._finish()
             return
         if self.timer % 2 == 0:
             if self.char_index < len(self._stripped[self.current]):
@@ -2082,6 +2158,13 @@ class CutsceneSystem:
         active = self._active_reel()
         if active is not None:
             active.advance()
+            active.prefill()
+        # Stream frames ahead while the player reads, so the reel is warm
+        # (or fully seeded) by the time it plays.
+        for br in self.reel_breaks.values():
+            br.prefill()
+        if self.reel is not None:
+            self.reel.prefill()
 
     def handle_input(self, event):
         if not self.active:
@@ -2089,13 +2172,25 @@ class CutsceneSystem:
         if event.type == pygame.KEYDOWN:
             if event.key in (pygame.K_RETURN, pygame.K_SPACE):
                 if self.reel_phase:
-                    self._finish()
+                    if self._break_resume:
+                        self.reel_phase = False
+                        self._break_resume = False
+                        self.reel = None
+                    else:
+                        self._finish()
                     return
                 if self.char_index < len(self._stripped[self.current]):
                     self.char_index = len(self._stripped[self.current])
                 else:
+                    prev = self.current
                     self.current += 1
                     self.char_index = 0
+                    if prev in self.reel_breaks and self.reel_breaks[prev].duration() > 0:
+                        self.reel_phase = True
+                        self._break_resume = True
+                        self.reel = self.reel_breaks[prev]
+                        self.reel.reset()
+                        return
                     if self.current >= len(self.lines):
                         if (self.reel_after and self.reel is not None
                                 and self.reel.duration() > 0):
@@ -2111,17 +2206,14 @@ class CutsceneSystem:
             return
         surface.fill(self.bg_color)
         if self.reel_phase:
-            f = self.reel.frame() if self.reel is not None else None
-            if f is not None:
-                surface.blit(f, (0, 0))
+            if self.reel is not None:
+                self.reel.blit(surface)
             hint = fonts.render_small("[ENTER] skip", (110, 110, 110))
             surface.blit(hint, (SCREEN_W - hint.get_width() - 12, SCREEN_H - 26))
             return
         active = self._active_reel()
         if active is not None:
-            f = active.frame()
-            if f is not None:
-                surface.blit(f, (0, 0))
+            active.blit(surface)
         text_y = SCREEN_H // 2 - 20
         portrait_img, portrait_label = self._current_speaker_portrait()
         if portrait_img:
@@ -2507,7 +2599,7 @@ class Game:
             "Now go warm up the strings. The encore is going to be loud.",
         ], bg_color=(16, 4, 12), callback=self.after_intro,
             portrait="azrael", label="AZRAEL D DESTROYER",
-            reel_plan=[(0, 3, "azrael_intro"), (6, 7, "fall")])
+            reel_breaks={3: "azrael_intro", 7: "fall"})
 
     def after_intro(self):
         self.state = GameState.PLAYING
