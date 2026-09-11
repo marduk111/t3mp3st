@@ -127,10 +127,10 @@ To add dialogue, create new interaction handlers in the `Game` class following t
 ### Cutscene reel options (`CutsceneSystem.start`)
 
 - **Default** (`reel_lines=(...)`): the reel runs *under* the dialogue text at the given line indexes — used by `fall`, `chamber`, `ending`.
-- **`reel_after=True`**: dialogue first (with per-speaker portraits), then a **fullscreen reel phase** with no text, then the `callback` fires (typical: the battle starts). Used by every pre-battle cutscene. `reel_voice="<slot>"` (optional) plays the matching music-slot clip **once, layered over the room track**, starting exactly when the reel starts — it never loops and is cut off when `stop_music()` runs at battle start. A clip whose length matches the animation (~frames ÷ 30) lands in near-perfect sync (e.g. the 240-frame zombie reel is 8.0 s and the shipped `zombie.mp3` is ~7.9 s).
+- **`reel_after=True`**: dialogue first (with per-speaker portraits), then a **fullscreen reel phase** with no text, then the `callback` fires (typical: the battle starts). Used by every pre-battle cutscene. Room music **stops when the cutscene begins**; `reel_voice="<slot>"` (optional) plays the matching music-slot clip **once on its own channel** during the reel — it never loops and is cut off when `stop_music()` runs at battle start. A clip whose length matches the animation (~frames ÷ 30) lands in near-perfect sync (e.g. the 240-frame zombie reel is 8.0 s and the shipped `zombie.mp3` is ~7.9 s).
 - ENTER/SPACE skips the reel phase early.
 
-**Pre-battle flow today:** engage enemy → dialogue with portraits (room music continues) → click past the last page → fullscreen reel + one-shot voice → battle starts with the combat playlist. Each enemy type and both bosses (`beast`, `pit_lord`) have their own reel key and voice slot waiting for your clips.
+**Pre-battle flow today:** engage enemy → room music stops → dialogue with portraits (silent, focused) → click past the last page → fullscreen reel + one-shot voice → battle starts with the combat playlist. Each enemy type and both bosses (`beast`, `pit_lord`) have their own reel key and voice slot waiting for your clips.
 
 ## Adding a New Music Slot
 
@@ -201,12 +201,12 @@ Folder: `assets/music/`.  File: `<slot>.mp3` (or `.ogg` / `.wav`).  Numbered var
 | booth | `booth.mp3` | The Sound Booth of Despair |
 | chamber | `chamber.mp3` | The Pit Lord's Chamber |
 | combat | `combat.mp3` | Any normal fight (playlist: `combat1/2/3...`) |
-| zombie | `zombie.mp3` | Zombie Fan pre-battle reel voice (plays once, layered over room track) |
-| corpse | `corpse.mp3` | Reanimated Roadie pre-battle reel voice |
-| shadow | `shadow.mp3` | Stage Ninja pre-battle reel voice |
-| demon | `demon.mp3` | Enforcer (non-boss) pre-battle reel voice |
-| engineer | `engineer.mp3` | Sound Engineer pre-battle reel voice |
-| boss | `boss.mp3` | Boss pre-battle reel voice (both bosses) |
+| zombie | `zombie.mp3` | Zombie Fan pre-battle reel voice (room music stops; plays once) |
+| corpse | `corpse.mp3` | Reanimated Roadie pre-battle reel voice (room music stops; plays once) |
+| shadow | `shadow.mp3` | Stage Ninja pre-battle reel voice (room music stops; plays once) |
+| demon | `demon.mp3` | Enforcer (non-boss) pre-battle reel voice (room music stops; plays once) |
+| engineer | `engineer.mp3` | Sound Engineer pre-battle reel voice (room music stops; plays once) |
+| boss | `boss.mp3` | Boss pre-battle reel voice (both bosses; room music stops; plays once) |
 | levelup | `levelup.mp3` | LEVEL UP banner (one-shot sting) |
 | discovery | `discovery.mp3` | Unlocking a new ability tome (one-shot sting) |
 | victory | `victory.mp3` | Beast defeated (one-shot sting) |
@@ -240,7 +240,7 @@ The engine's recommended path for short authored clips is **PNG frame sequences,
 2. Export as numbered frames into `assets/animations/<key>/` — e.g. `assets/animations/beast/0001.png`, `0002.png`, ... Any numeric filename works (`1.png`, `01.png`, `0001.png`); the game sorts them **numerically** and ignores non-images.
 3. Make frames **1024x768** for pixel-perfect full-screen scenes. Different sizes are auto-stretched to fill the screen.
 4. The game plays **one frame per tick at 30 FPS**, so export at **30 fps** for 1:1 timing (a 3-second clip = 90 frames).
-5. **Audio is optional and per-beat.** Intro-beat reels keep whatever music is already playing underneath. Pre-battle reels (zombie, corpse, ..., boss) play a **one-shot voice** from the matching music slot — it starts in sync with the reel, plays once on top of the room track, and stops at battle start. Match the clip length to the animation for a perfect landing (e.g. 240 frames ÷ 30 = 8.0 s).
+5. **Audio is optional and per-beat.** Intro-beat reels (fall, chamber, ending) keep whatever music is already playing underneath. Pre-battle reels (zombie, corpse, ..., boss) stop the room music when the cutscene starts and play a **one-shot voice** from the matching music slot — it starts in sync with the reel, runs once on its own channel (nothing else playing), and stops at battle start. Match the clip length to the animation for a perfect landing (e.g. 240 frames ÷ 30 = 8.0 s).
 6. Launch once and check **`ASSET_MANIFEST.md`**: the **Animations** table lists every key with its live frame count and `READY (N frames)` vs `NO FRAMES` status.
 
 Frames load once into memory (no runtime video decoding, no new dependencies). Missing folders simply fall back to the cutscene shown in the table above — the same fallback rule as portraits and music.

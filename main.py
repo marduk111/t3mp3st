@@ -2552,12 +2552,12 @@ class Game:
             "booth": "The Sound Booth of Despair",
             "chamber": "The Pit Lord's Chamber",
             "combat": "Any normal fight (battle playlist combat1/2/3...)",
-            "zombie": "Zombie Fan pre-battle reel voice (plays once, layered over the room track)",
-            "corpse": "Reanimated Roadie pre-battle reel voice (plays once, layered over the room track)",
-            "shadow": "Stage Ninja pre-battle reel voice (plays once, layered over the room track)",
-            "demon": "Enforcer (non-boss) pre-battle reel voice (plays once, layered over the room track)",
-            "engineer": "Sound Engineer pre-battle reel voice (plays once, layered over the room track)",
-            "boss": "Boss pre-battle reel voice (plays once, layered over the room track)",
+            "zombie": "Zombie Fan pre-battle reel voice (room music stops; plays once)",
+            "corpse": "Reanimated Roadie pre-battle reel voice (room music stops; plays once)",
+            "shadow": "Stage Ninja pre-battle reel voice (room music stops; plays once)",
+            "demon": "Enforcer (non-boss) pre-battle reel voice (room music stops; plays once)",
+            "engineer": "Sound Engineer pre-battle reel voice (room music stops; plays once)",
+            "boss": "Boss pre-battle reel voice (room music stops; plays once)",
             "levelup": "LEVEL UP banner (one-shot sting)",
             "discovery": "Unlocking a new ability tome (one-shot sting)",
             "victory": "Beast defeated (one-shot sting)",
@@ -2777,7 +2777,7 @@ class Game:
                     "MARDUK: 'Warm-up's over.'",
                 ],
             }
-            sound.stop_voice()
+            sound.stop_music()
             self.cutscene.start(beat_lines[key], bg_color=(24, 2, 2),
                                 callback=self._start_pending_battle,
                                 reel_key=key, reel_placeholder=False,
@@ -2814,7 +2814,7 @@ class Game:
         }
         key = target.get("type", "")
         if key in pre_battle_lines and key in REEL_MOMENTS:
-            sound.stop_voice()
+            sound.stop_music()
             self.cutscene.start(pre_battle_lines[key], bg_color=(16, 4, 12),
                                 callback=self._start_pending_battle,
                                 reel_key=key, reel_placeholder=False,
