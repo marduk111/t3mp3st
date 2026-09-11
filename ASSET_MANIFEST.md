@@ -82,7 +82,7 @@ built-in procedural placeholder scene so you can see how it works).
 
 | Key | Plays when | Frames found |
 |---|---|---|
-| fall | Opening cutscene: the stage gives way under Marduk | NO FRAMES - procedural fallback scene |
+| fall | Opening cutscene: the stage gives way under Marduk | READY (300 frames) |
 | chamber | Entering the Pit Lord's Chamber for the first time | NO FRAMES - text-only |
 | pit_lord | Right before the Enforcer boss fight | NO FRAMES - text-only |
 | beast | Right before the final battle with the Pit Lord | NO FRAMES - text-only |

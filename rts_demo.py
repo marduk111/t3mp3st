@@ -954,6 +954,7 @@ class Demo:
                 b["constructing"] -= 1
         if self._wave_clear():
             self._wave_complete()
+            self.phase = "player"
             return
         self.phase = "player"
         self.banner = None
